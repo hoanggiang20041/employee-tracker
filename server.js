@@ -82,7 +82,7 @@ function requireAdmin(req, res, next) {
 
 // API Routes cho quản lý nhân viên (cần admin)
 app.post('/employees', requireAdmin, (req, res) => {
-  const { employeeId, employeeName, position, department } = req.body;
+  const { employeeId, employeeName, position, department, password } = req.body;
   
   if (!employeeId || !employeeName) {
     return res.status(400).json({ error: 'Thiếu thông tin bắt buộc' });
@@ -98,6 +98,7 @@ app.post('/employees', requireAdmin, (req, res) => {
     id: Date.now(),
     employeeId,
     employeeName,
+    password: password || '123456', // Mật khẩu mặc định
     position: position || 'Nhân viên',
     department: department || 'Chưa phân bộ',
     createdAt: new Date().toISOString(),
@@ -107,7 +108,7 @@ app.post('/employees', requireAdmin, (req, res) => {
   employees.push(employee);
   saveDataToFile();
   
-  console.log(`✅ Thêm nhân viên mới: ${employeeName} (${employeeId})`);
+  console.log(`✅ Thêm nhân viên mới: ${employeeName} (${employeeId}) - Password: ${employee.password}`);
   res.json({ success: true, employee });
 });
 
@@ -179,6 +180,38 @@ app.post('/validate-employee', (req, res) => {
     isValid, 
     message: isValid ? 'Nhân viên hợp lệ' : 'Nhân viên không tồn tại',
     employee: isValid ? employee : null
+  });
+});
+
+// API đăng nhập nhân viên
+app.post('/employee-login', (req, res) => {
+  const { employeeId, password } = req.body;
+  
+  if (!employeeId || !password) {
+    return res.status(400).json({ success: false, message: 'Thiếu thông tin đăng nhập' });
+  }
+  
+  const employee = employees.find(emp => emp.employeeId === employeeId);
+  
+  if (!employee) {
+    return res.json({ success: false, message: 'Mã nhân viên không tồn tại' });
+  }
+  
+  if (!employee.isActive) {
+    return res.json({ success: false, message: 'Tài khoản đã bị vô hiệu hóa' });
+  }
+  
+  // Kiểm tra password (trong thực tế nên hash password)
+  if (employee.password !== password) {
+    return res.json({ success: false, message: 'Mật khẩu không đúng' });
+  }
+  
+  console.log(`✅ Nhân viên đăng nhập: ${employee.employeeName} (${employeeId})`);
+  res.json({ 
+    success: true, 
+    message: 'Đăng nhập thành công',
+    employeeName: employee.employeeName,
+    employeeId: employee.employeeId
   });
 });
 

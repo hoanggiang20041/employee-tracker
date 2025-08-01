@@ -104,6 +104,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (window.location.href.includes('facebook.com/help/contact')) {
         console.log('✅ Đây là trang gỡ block Facebook');
         
+        // Hiển thị popup thông báo
+        showBlockNotification();
+        
         // Tự động điền form sau 5 giây
         setTimeout(() => {
             const defaultMessage = 'Tôi muốn gỡ khóa comment cho tài khoản của mình. Tôi không vi phạm quy định nào của Facebook và cần khôi phục quyền comment để tương tác với bạn bè và gia đình. Tôi cam kết tuân thủ các quy định cộng đồng của Facebook trong tương lai.';
@@ -111,6 +114,69 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 5000);
     }
 });
+
+// Hiển thị popup thông báo block
+function showBlockNotification() {
+    const popup = document.createElement('div');
+    popup.innerHTML = `
+        <div style="
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            z-index: 10000;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        ">
+            <h2 style="color: #dc3545; margin-top: 0;">🚫 Phát hiện Block Comment</h2>
+            <p style="color: #666; margin-bottom: 20px;">
+                Tài khoản của bạn đã bị Facebook block comment. 
+                Extension sẽ tự động điền form kháng cáo và gửi yêu cầu gỡ block.
+            </p>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button onclick="this.parentElement.parentElement.parentElement.remove()" style="
+                    padding: 10px 20px;
+                    background: #6c757d;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                ">Đóng</button>
+                <button onclick="fillUnblockForm('Tôi muốn gỡ khóa comment cho tài khoản của mình. Tôi không vi phạm quy định nào của Facebook và cần khôi phục quyền comment để tương tác với bạn bè và gia đình. Tôi cam kết tuân thủ các quy định cộng đồng của Facebook trong tương lai.'); this.parentElement.parentElement.parentElement.remove();" style="
+                    padding: 10px 20px;
+                    background: #007bff;
+                    color: white;
+                    border: none;
+                    border-radius: 5px;
+                    cursor: pointer;
+                ">🤖 Tự động điền ngay</button>
+            </div>
+        </div>
+        <div style="
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+        " onclick="this.remove()"></div>
+    `;
+    
+    document.body.appendChild(popup);
+    
+    // Tự động đóng sau 10 giây
+    setTimeout(() => {
+        if (popup.parentElement) {
+            popup.remove();
+        }
+    }, 10000);
+}
 
 // Thêm listener cho khi trang đã load hoàn toàn
 window.addEventListener('load', function() {

@@ -4,10 +4,29 @@ let timerInterval = null;
 
 // Khởi tạo popup
 document.addEventListener('DOMContentLoaded', async () => {
+  await checkLoginStatus();
   await loadSavedEmployeeInfo();
   await updateStatus();
   setupValidation();
 });
+
+// Kiểm tra trạng thái đăng nhập
+async function checkLoginStatus() {
+  try {
+    const result = await chrome.storage.local.get(['isLoggedIn', 'employeeId', 'employeeName']);
+    
+    if (!result.isLoggedIn) {
+      // Chuyển đến trang đăng nhập
+      window.location.href = 'employee-login.html';
+      return;
+    }
+    
+    console.log('✅ Đã đăng nhập:', result);
+  } catch (error) {
+    console.error('❌ Lỗi khi kiểm tra đăng nhập:', error);
+    window.location.href = 'employee-login.html';
+  }
+}
 
 // Load thông tin nhân viên đã lưu
 async function loadSavedEmployeeInfo() {
@@ -314,4 +333,21 @@ function showStatus(message, type) {
   const statusDiv = document.getElementById('status');
   statusDiv.textContent = message;
   statusDiv.className = `status ${type}`;
+}
+
+// Hàm đăng xuất
+async function logout() {
+  try {
+    // Xóa dữ liệu đăng nhập
+    await chrome.storage.local.remove(['isLoggedIn', 'employeeId', 'employeeName']);
+    
+    // Dừng tracking nếu đang chạy
+    await chrome.runtime.sendMessage({ action: 'stopTracking' });
+    
+    // Chuyển về trang đăng nhập
+    window.location.href = 'employee-login.html';
+  } catch (error) {
+    console.error('❌ Lỗi khi đăng xuất:', error);
+    window.location.href = 'employee-login.html';
+  }
 }
