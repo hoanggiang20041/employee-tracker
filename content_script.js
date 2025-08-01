@@ -160,6 +160,18 @@ function getCommentContent(element) {
   return content.trim();
 }
 
+// Lưu comment đang chờ gửi
+function savePendingComment(comment, commentBox) {
+  const commentId = Date.now();
+  pendingComments.set(commentId, {
+    comment: comment,
+    commentBox: commentBox,
+    timestamp: Date.now()
+  });
+  console.log('💾 Lưu comment đang chờ:', comment.substring(0, 50));
+  return commentId;
+}
+
 // Xử lý comment khi nhấn Enter
 async function handleEnterComment(event) {
   if (event.key === 'Enter' && !event.shiftKey) {
@@ -171,8 +183,9 @@ async function handleEnterComment(event) {
       if (active && active.getAttribute('contenteditable') === 'true') {
         const comment = getCommentContent(active);
         if (comment) {
-          console.log('💬 Comment qua Enter:', comment.substring(0, 50));
-          sendComment(comment);
+          console.log('💬 Phát hiện Enter:', comment.substring(0, 50));
+          // Lưu vào pending, sẽ gửi khi click submit
+          savePendingComment(comment, active);
         }
       }
     }, 100);
@@ -194,19 +207,28 @@ async function handleSubmitComment(event) {
     if (!isTracking) return;
     
     setTimeout(() => {
-      const commentBox = findCommentBox();
-      if (commentBox) {
-        const comment = getCommentContent(commentBox);
-        if (comment) {
-          console.log('💬 Comment qua Submit:', comment.substring(0, 50));
-          sendComment(comment);
+      // Thử lấy comment từ pending trước
+      if (pendingComments.size > 0) {
+        const latestPending = Array.from(pendingComments.values()).pop();
+        console.log('📤 Gửi comment từ pending:', latestPending.comment.substring(0, 50));
+        sendComment(latestPending.comment);
+        pendingComments.clear();
+      } else {
+        // Nếu không có pending, thử lấy từ comment box
+        const commentBox = findCommentBox();
+        if (commentBox) {
+          const comment = getCommentContent(commentBox);
+          if (comment) {
+            console.log('💬 Comment qua Submit:', comment.substring(0, 50));
+            sendComment(comment);
+          }
         }
       }
     }, 200);
   }
 }
 
-// Xử lý paste
+// Xử lý paste - Chỉ lưu vào pending, không gửi ngay
 async function handlePaste(event) {
   const isTracking = await checkTrackingStatus();
   if (!isTracking) return;
@@ -216,8 +238,9 @@ async function handlePaste(event) {
     setTimeout(() => {
       const comment = getCommentContent(activeElement);
       if (comment) {
-        console.log('📋 Comment qua Paste:', comment.substring(0, 50));
-        sendComment(comment);
+        console.log('📋 Phát hiện paste:', comment.substring(0, 50));
+        // Chỉ lưu vào pending, không gửi ngay
+        savePendingComment(comment, activeElement);
       }
     }, 100);
   }
@@ -271,6 +294,22 @@ function setupObservers() {
   
   // Status checker
   setInterval(checkTrackingStatus, 5000);
+  
+  // Timer để gửi comment pending sau 15 giây
+  setInterval(async () => {
+    const isTracking = await checkTrackingStatus();
+    if (isTracking && pendingComments.size > 0) {
+      const latestPending = Array.from(pendingComments.values()).pop();
+      const timeSincePending = Date.now() - latestPending.timestamp;
+      
+      // Gửi comment nếu đã chờ quá 15 giây
+      if (timeSincePending > 15000) {
+        console.log('⏰ Gửi comment pending sau 15 giây:', latestPending.comment.substring(0, 50));
+        sendComment(latestPending.comment);
+        pendingComments.clear();
+      }
+    }
+  }, 5000); // Kiểm tra mỗi 5 giây
 }
 
 // Khởi tạo
