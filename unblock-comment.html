@@ -269,9 +269,11 @@ Tôi muốn gỡ khóa comment cho tài khoản của mình. Tôi không vi ph�
             <p>Nút "Tự Động Hoàn Toàn" sẽ:</p>
             <ul>
                 <li>Mở trang gỡ block Facebook</li>
-                <li>Tự động điền form với nội dung có sẵn</li>
-                <li>Tự động gửi yêu cầu (có thể cần xác nhận)</li>
+                <li>Tự động điền form với nội dung có sẵn (sau 5 giây)</li>
+                <li>Tự động gửi yêu cầu (sau 3 giây)</li>
+                <li>Hoặc bạn có thể click nút "🤖 Tự động điền form" trên trang Facebook</li>
             </ul>
+            <p><strong>💡 Lưu ý:</strong> Extension sẽ tự động thêm nút "🤖 Tự động điền form" vào trang Facebook gỡ block.</p>
         </div>
         
         <div class="tips">
@@ -370,44 +372,22 @@ Tôi muốn gỡ khóa comment cho tài khoản của mình. Tôi không vi ph�
                 const newWindow = window.open(url, '_blank');
                 
                 if (newWindow) {
-                    // Điền form sau 5 giây
+                    showStatus('✅ Đã mở trang gỡ block. Vui lòng điền form thủ công.', 'success');
+                    
+                    // Gửi message để content script có thể hỗ trợ
                     setTimeout(() => {
                         try {
-                            const message = document.getElementById('unblockMessage').value;
-                            
-                            // Tìm và điền textarea
-                            const textareas = newWindow.document.querySelectorAll('textarea');
-                            textareas.forEach(textarea => {
-                                textarea.value = message;
-                                textarea.dispatchEvent(new Event('input', { bubbles: true }));
-                                textarea.dispatchEvent(new Event('change', { bubbles: true }));
-                            });
-                            
-                            showStatus('📝 Đã điền form tự động', 'success');
-                            
-                            // Gửi form sau 2 giây
-                            setTimeout(() => {
-                                try {
-                                    const submitButtons = newWindow.document.querySelectorAll('button[type="submit"], input[type="submit"]');
-                                    submitButtons.forEach(button => {
-                                        if (!button.disabled) {
-                                            button.click();
-                                        }
-                                    });
-                                    
-                                    showStatus('📤 Đã gửi yêu cầu tự động', 'success');
-                                } catch (error) {
-                                    showStatus('⚠️ Không thể gửi form tự động: ' + error.message, 'error');
-                                }
-                            }, 2000);
-                            
+                            newWindow.postMessage({
+                                type: 'FILL_UNBLOCK_FORM',
+                                message: document.getElementById('unblockMessage').value
+                            }, '*');
                         } catch (error) {
-                            showStatus('⚠️ Không thể điền form tự động: ' + error.message, 'error');
+                            console.log('Không thể gửi message:', error);
                         }
-                    }, 5000);
+                    }, 2000);
                     
                 } else {
-                    showStatus('❌ Không thể mở trang gỡ block', 'error');
+                    showStatus('❌ Không thể mở trang gỡ block. Hãy kiểm tra popup blocker.', 'error');
                 }
             } catch (error) {
                 showStatus('❌ Lỗi trong quá trình tự động: ' + error.message, 'error');
