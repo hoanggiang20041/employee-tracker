@@ -173,13 +173,33 @@ async function handleEnterComment(event) {
     setTimeout(() => {
       const active = document.activeElement;
       if (active && active.getAttribute('contenteditable') === 'true') {
-        const comment = active.innerText || active.textContent;
+        // Thử nhiều cách lấy nội dung
+        let comment = active.innerText || active.textContent || active.innerHTML;
+        
+        // Nếu vẫn không có, thử tìm trong các element con
+        if (!comment || comment.trim().length === 0) {
+          const textElements = active.querySelectorAll('*');
+          for (const element of textElements) {
+            if (element.textContent && element.textContent.trim().length > 0) {
+              comment = element.textContent;
+              break;
+            }
+          }
+        }
+        
+        console.log('🔍 Active element content:', comment);
+        console.log('🔍 Active element HTML:', active.innerHTML);
+        
         if (comment && comment.trim().length > 0) {
           console.log('💬 Phát hiện comment qua Enter:', comment.substring(0, 50));
           sendComment(comment);
+        } else {
+          console.log('⚠️ Không tìm thấy nội dung comment qua Enter');
         }
+      } else {
+        console.log('⚠️ Active element không phải comment box');
       }
-    }, 100);
+    }, 200);
   }
 }
 
@@ -209,13 +229,33 @@ async function handleSubmitComment(event) {
       let commentBox = findCommentBox();
       
       if (commentBox) {
-        const comment = commentBox.innerText || commentBox.textContent;
+        // Thử nhiều cách lấy nội dung
+        let comment = commentBox.innerText || commentBox.textContent || commentBox.innerHTML;
+        
+        // Nếu vẫn không có, thử tìm trong các element con
+        if (!comment || comment.trim().length === 0) {
+          const textElements = commentBox.querySelectorAll('*');
+          for (const element of textElements) {
+            if (element.textContent && element.textContent.trim().length > 0) {
+              comment = element.textContent;
+              break;
+            }
+          }
+        }
+        
+        console.log('🔍 Comment box content:', comment);
+        console.log('🔍 Comment box HTML:', commentBox.innerHTML);
+        
         if (comment && comment.trim().length > 0) {
           console.log('💬 Phát hiện comment qua nút gửi:', comment.substring(0, 50));
           sendComment(comment);
+        } else {
+          console.log('⚠️ Không tìm thấy nội dung comment');
         }
+      } else {
+        console.log('⚠️ Không tìm thấy comment box');
       }
-    }, 300);
+    }, 500);
   }
 }
 
@@ -261,16 +301,45 @@ function setupFormObserver() {
     const isTracking = await checkTrackingStatus();
     if (!isTracking) return;
     
+    console.log('📝 Phát hiện form submit');
+    
     const form = event.target;
     const textInputs = form.querySelectorAll('textarea, input[type="text"], [contenteditable="true"]');
     
     textInputs.forEach(input => {
-      const value = input.value || input.innerText || input.textContent;
+      let value = input.value || input.innerText || input.textContent;
+      
+      // Nếu vẫn không có, thử tìm trong các element con
+      if (!value || value.trim().length === 0) {
+        const textElements = input.querySelectorAll('*');
+        for (const element of textElements) {
+          if (element.textContent && element.textContent.trim().length > 0) {
+            value = element.textContent;
+            break;
+          }
+        }
+      }
+      
+      console.log('🔍 Form input content:', value);
+      console.log('🔍 Form input HTML:', input.innerHTML);
+      
       if (value && value.trim().length > 0) {
         console.log('📝 Phát hiện comment qua form submit:', value.substring(0, 50));
         sendComment(value);
       }
     });
+    
+    // Nếu không có form data, thử tìm trong DOM
+    setTimeout(() => {
+      const commentBox = findCommentBox();
+      if (commentBox) {
+        let comment = commentBox.innerText || commentBox.textContent;
+        if (comment && comment.trim().length > 0) {
+          console.log('💬 Phát hiện comment qua form DOM:', comment.substring(0, 50));
+          sendComment(comment);
+        }
+      }
+    }, 100);
   });
 }
 
