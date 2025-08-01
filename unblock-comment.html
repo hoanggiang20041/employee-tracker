@@ -264,17 +264,21 @@ Tôi muốn gỡ khóa comment cho tài khoản của mình. Tôi không vi ph�
             </button>
         </div>
         
-        <div class="auto-complete-section">
-            <h4>⚡ Tính năng tự động</h4>
-            <p>Nút "Tự Động Hoàn Toàn" sẽ:</p>
-            <ul>
-                <li>Mở trang gỡ block Facebook</li>
-                <li>Tự động điền form với nội dung có sẵn (sau 5 giây)</li>
-                <li>Tự động gửi yêu cầu (sau 3 giây)</li>
-                <li>Hoặc bạn có thể click nút "🤖 Tự động điền form" trên trang Facebook</li>
-            </ul>
-            <p><strong>💡 Lưu ý:</strong> Extension sẽ tự động thêm nút "🤖 Tự động điền form" vào trang Facebook gỡ block.</p>
-        </div>
+                 <div class="auto-complete-section">
+             <h4>⚡ Tính năng tự động</h4>
+             <p>Nút "Tự Động Hoàn Toàn" sẽ:</p>
+             <ul>
+                 <li>Mở trang gỡ block Facebook</li>
+                 <li>Tự động điền form với nội dung có sẵn (sau 5 giây)</li>
+                 <li>Tự động gửi yêu cầu (sau 3 giây)</li>
+                 <li>Hoặc bạn có thể click nút "🤖 Tự động điền form" và "📤 Tự động gửi" trên trang Facebook</li>
+             </ul>
+             <p><strong>💡 Lưu ý:</strong> Extension sẽ tự động thêm 2 nút vào trang Facebook gỡ block:</p>
+             <ul>
+                 <li><strong>🤖 Tự động điền form:</strong> Điền nội dung yêu cầu gỡ block</li>
+                 <li><strong>📤 Tự động gửi:</strong> Gửi form sau khi đã điền</li>
+             </ul>
+         </div>
         
         <div class="tips">
             <h4>💡 Mẹo hữu ích</h4>
@@ -372,7 +376,7 @@ Tôi muốn gỡ khóa comment cho tài khoản của mình. Tôi không vi ph�
                 const newWindow = window.open(url, '_blank');
                 
                 if (newWindow) {
-                    showStatus('✅ Đã mở trang gỡ block. Vui lòng điền form thủ công.', 'success');
+                    showStatus('✅ Đã mở trang gỡ block Facebook. Extension sẽ tự động điền form sau 5 giây.', 'success');
                     
                     // Gửi message để content script có thể hỗ trợ
                     setTimeout(() => {
@@ -381,8 +385,10 @@ Tôi muốn gỡ khóa comment cho tài khoản của mình. Tôi không vi ph�
                                 type: 'FILL_UNBLOCK_FORM',
                                 message: document.getElementById('unblockMessage').value
                             }, '*');
+                            showStatus('📝 Đã gửi yêu cầu điền form tự động', 'success');
                         } catch (error) {
                             console.log('Không thể gửi message:', error);
+                            showStatus('⚠️ Không thể gửi message, nhưng extension sẽ tự động điền form', 'info');
                         }
                     }, 2000);
                     

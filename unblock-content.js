@@ -112,6 +112,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Thêm listener cho khi trang đã load hoàn toàn
+window.addEventListener('load', function() {
+    console.log('🌐 Trang đã load hoàn toàn');
+    
+    if (window.location.href.includes('facebook.com/help/contact')) {
+        console.log('✅ Đây là trang gỡ block Facebook (load event)');
+        
+        // Thử điền form sau khi trang load hoàn toàn
+        setTimeout(() => {
+            const defaultMessage = 'Tôi muốn gỡ khóa comment cho tài khoản của mình. Tôi không vi phạm quy định nào của Facebook và cần khôi phục quyền comment để tương tác với bạn bè và gia đình. Tôi cam kết tuân thủ các quy định cộng đồng của Facebook trong tương lai.';
+            fillUnblockForm(defaultMessage);
+        }, 3000);
+    }
+});
+
 // Thêm nút tự động điền vào trang
 function addAutoFillButton() {
     const button = document.createElement('button');
@@ -128,6 +143,7 @@ function addAutoFillButton() {
         border-radius: 5px;
         cursor: pointer;
         font-size: 14px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     `;
     
     button.addEventListener('click', () => {
@@ -135,10 +151,42 @@ function addAutoFillButton() {
         fillUnblockForm(defaultMessage);
     });
     
+    // Thêm nút submit riêng
+    const submitButton = document.createElement('button');
+    submitButton.textContent = '📤 Tự động gửi';
+    submitButton.style.cssText = `
+        position: fixed;
+        top: 70px;
+        right: 20px;
+        z-index: 9999;
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    `;
+    
+    submitButton.addEventListener('click', () => {
+        submitUnblockForm();
+    });
+    
     document.body.appendChild(button);
+    document.body.appendChild(submitButton);
 }
 
 // Thêm nút sau khi trang load
 setTimeout(addAutoFillButton, 2000);
+
+// Thêm nút sau khi DOM ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(addAutoFillButton, 1000);
+    });
+} else {
+    setTimeout(addAutoFillButton, 1000);
+}
 
 console.log('🔓 Unblock content script đã sẵn sàng'); 
