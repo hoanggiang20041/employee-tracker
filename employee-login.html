@@ -186,13 +186,16 @@
         
         async function loginEmployee(employeeId, password) {
             try {
+                console.log('🔄 Đang gửi yêu cầu đăng nhập...', { employeeId, password });
                 const response = await fetch('https://employee-tracker-2np8.onrender.com/employee-login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ employeeId, password })
                 });
                 
+                console.log('📡 Response status:', response.status);
                 const result = await response.json();
+                console.log('📡 Response data:', result);
                 return result;
             } catch (error) {
                 console.error('❌ Lỗi khi đăng nhập:', error);
@@ -202,6 +205,7 @@
         
         async function saveEmployeeSession(employeeId, employeeName) {
             try {
+                console.log('💾 Đang lưu session...', { employeeId, employeeName });
                 const response = await fetch('https://employee-tracker-2np8.onrender.com/employee-session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -212,7 +216,7 @@
                     console.log('💾 Đã lưu session nhân viên');
                     return true;
                 } else {
-                    console.error('❌ Lỗi khi lưu session');
+                    console.error('❌ Lỗi khi lưu session:', response.status);
                     return false;
                 }
             } catch (error) {
@@ -221,43 +225,64 @@
             }
         }
         
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        // Thêm event listener cho form
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Trang đăng nhập đã load');
             
-            const employeeId = document.getElementById('employeeId').value.trim();
-            const password = document.getElementById('password').value.trim();
-            
-            if (!employeeId || !password) {
-                showStatus('❌ Vui lòng nhập đầy đủ thông tin!', 'error');
-                return;
-            }
-            
-            showStatus('🔄 Đang đăng nhập...', 'info');
-            
-            try {
-                const loginResult = await loginEmployee(employeeId, password);
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                console.log('✅ Tìm thấy form đăng nhập');
                 
-                if (loginResult.success) {
-                    showStatus('✅ Đăng nhập thành công!', 'success');
+                loginForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    console.log('📝 Form được submit');
                     
-                    // Lưu session trên server
-                    await saveEmployeeSession(employeeId, loginResult.employeeName);
+                    const employeeId = document.getElementById('employeeId').value.trim();
+                    const password = document.getElementById('password').value.trim();
                     
-                    // Chuyển về popup chính
-                    setTimeout(() => {
-                        window.location.href = 'popup.html';
-                    }, 2000);
+                    console.log('📋 Dữ liệu form:', { employeeId, password });
                     
-                } else {
-                    showStatus(`❌ ${loginResult.message}`, 'error');
-                }
-            } catch (error) {
-                console.error('❌ Lỗi đăng nhập:', error);
-                showStatus('❌ Lỗi kết nối server!', 'error');
+                    if (!employeeId || !password) {
+                        showStatus('❌ Vui lòng nhập đầy đủ thông tin!', 'error');
+                        return;
+                    }
+                    
+                    showStatus('🔄 Đang đăng nhập...', 'info');
+                    
+                    try {
+                        const loginResult = await loginEmployee(employeeId, password);
+                        
+                        if (loginResult.success) {
+                            showStatus('✅ Đăng nhập thành công!', 'success');
+                            
+                            // Lưu session trên server
+                            const sessionSaved = await saveEmployeeSession(employeeId, loginResult.employeeName);
+                            
+                            if (sessionSaved) {
+                                // Chuyển về popup chính
+                                setTimeout(() => {
+                                    console.log('🔄 Chuyển về popup.html');
+                                    window.location.href = 'popup.html';
+                                }, 2000);
+                            } else {
+                                showStatus('⚠️ Đăng nhập thành công nhưng không thể lưu session', 'error');
+                            }
+                            
+                        } else {
+                            showStatus(`❌ ${loginResult.message}`, 'error');
+                        }
+                    } catch (error) {
+                        console.error('❌ Lỗi đăng nhập:', error);
+                        showStatus('❌ Lỗi kết nối server!', 'error');
+                    }
+                });
+            } else {
+                console.error('❌ Không tìm thấy form đăng nhập');
             }
         });
         
         function openAdminPage() {
+            console.log('👨‍💼 Mở trang admin');
             chrome.tabs.create({ url: 'https://employee-tracker-2np8.onrender.com/admin.html' });
         }
         
