@@ -516,6 +516,54 @@ app.get('/tracking-status/:employeeId', (req, res) => {
   }
 });
 
+// API để quản lý employee session
+app.get('/employee-session', (req, res) => {
+  // Trả về session đầu tiên (nếu có)
+  const sessions = Array.from(employeeSessions.values());
+  if (sessions.length > 0) {
+    res.json(sessions[0]);
+  } else {
+    res.status(404).json({ error: 'Không có session nào' });
+  }
+});
+
+app.post('/employee-session', (req, res) => {
+  const { employeeId, employeeName } = req.body;
+  
+  if (!employeeId || !employeeName) {
+    return res.status(400).json({ error: 'Thiếu thông tin nhân viên' });
+  }
+  
+  // Lưu session
+  employeeSessions.set(employeeId, {
+    employeeId,
+    employeeName,
+    loginTime: new Date().toISOString()
+  });
+  
+  saveDataToFile();
+  console.log(`✅ Nhân viên đăng nhập: ${employeeName} (${employeeId})`);
+  res.json({ success: true, message: 'Đăng nhập thành công' });
+});
+
+app.delete('/employee-session', (req, res) => {
+  const { employeeId } = req.query;
+  
+  if (employeeId) {
+    // Xóa session của nhân viên cụ thể
+    employeeSessions.delete(employeeId);
+    trackingStatus.delete(employeeId);
+  } else {
+    // Xóa tất cả sessions
+    employeeSessions.clear();
+    trackingStatus.clear();
+  }
+  
+  saveDataToFile();
+  console.log('🚪 Đã đăng xuất');
+  res.json({ success: true, message: 'Đăng xuất thành công' });
+});
+
 app.delete('/tracking-status', (req, res) => {
   const { employeeId } = req.query;
   

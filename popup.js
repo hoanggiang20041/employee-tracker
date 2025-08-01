@@ -1,6 +1,10 @@
 console.log('popup.js đã được nạp!');
 
 let timerInterval = null;
+let isTracking = false;
+let currentEmployeeId = null;
+let currentEmployeeName = null;
+let startTime = null;
 
 // Khởi tạo popup
 document.addEventListener('DOMContentLoaded', async () => {
@@ -31,11 +35,15 @@ async function loadSavedEmployeeInfo() {
       if (data.employeeId && data.employeeName) {
         document.getElementById('employeeId').value = data.employeeId;
         document.getElementById('employeeName').value = data.employeeName;
-        console.log('📥 Loaded employee info from server:', data);
         
-        // Lưu lại để đảm bảo persistence
-        await saveEmployeeInfo(data.employeeId, data.employeeName);
+        // Cập nhật biến global
+        currentEmployeeId = data.employeeId;
+        currentEmployeeName = data.employeeName;
+        
+        console.log('📥 Loaded employee info from server:', data);
       }
+    } else {
+      console.log('⚠️ Không có employee session, cần đăng nhập');
     }
   } catch (error) {
     console.error('❌ Lỗi khi load employee info:', error);
@@ -55,21 +63,9 @@ async function saveEmployeeInfo(employeeId, employeeName) {
     if (response.ok) {
       console.log('💾 Saved employee info to server');
       
-      // Cũng lưu tracking status để đảm bảo persistence
-      const trackingResponse = await fetch('https://employee-tracker-2np8.onrender.com/tracking-status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          employeeId,
-          employeeName,
-          isTracking: false,
-          startTime: null
-        })
-      });
-      
-      if (trackingResponse.ok) {
-        console.log('💾 Saved tracking status to server');
-      }
+      // Cập nhật biến global
+      currentEmployeeId = employeeId;
+      currentEmployeeName = employeeName;
     } else {
       console.error('❌ Lỗi khi lưu employee info lên server');
     }
@@ -400,7 +396,8 @@ async function loadTrackingStatus() {
       if (data.isTracking) {
         isTracking = true;
         startTime = data.startTime;
-        updateUI();
+        currentEmployeeId = data.employeeId;
+        currentEmployeeName = data.employeeName;
         console.log('📊 Loaded tracking status from server:', data);
       }
     }

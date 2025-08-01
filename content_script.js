@@ -23,6 +23,8 @@ async function initializeFromServer() {
         currentEmployeeName = sessionData.employeeName;
         console.log('✅ Loaded session from server:', sessionData);
       }
+    } else {
+      console.log('⚠️ Không có session, cần đăng nhập từ popup');
     }
     
     // Lấy tracking status từ server
@@ -32,6 +34,8 @@ async function initializeFromServer() {
       if (trackingData.isTracking) {
         isTracking = true;
         startTime = trackingData.startTime;
+        currentEmployeeId = trackingData.employeeId;
+        currentEmployeeName = trackingData.employeeName;
         console.log('✅ Loaded tracking status from server:', trackingData);
       }
     }
@@ -166,6 +170,7 @@ function showNotification(title, message) {
 // Kiểm tra trạng thái tracking
 async function checkTrackingStatus() {
   if (!isTracking || !currentEmployeeId || !currentEmployeeName) {
+    console.log('📊 Tracking status:', { isTracking, currentEmployeeId, currentEmployeeName });
     return false;
   }
   return true;
@@ -203,23 +208,45 @@ function getCommentContent(element) {
     }
   }
   
+  // Cách 5: Lấy từ tất cả text nodes
+  if (!content) {
+    const walker = document.createTreeWalker(
+      element,
+      NodeFilter.SHOW_TEXT,
+      null,
+      false
+    );
+    
+    const textNodes = [];
+    let node;
+    while (node = walker.nextNode()) {
+      if (node.textContent.trim()) {
+        textNodes.push(node.textContent.trim());
+      }
+    }
+    content = textNodes.join(' ').trim();
+  }
+  
   return content.trim();
 }
 
 // Xử lý comment submit
 async function handleCommentSubmit(commentElement, submitButton) {
   if (!await checkTrackingStatus()) {
+    console.log('❌ Không đang tracking hoặc chưa có thông tin nhân viên');
     return;
   }
   
   const content = getCommentContent(commentElement);
   if (!content) {
+    console.log('❌ Không tìm thấy nội dung comment');
     return;
   }
   
   // Tránh duplicate trong 3 giây
   const now = Date.now();
   if (now - lastCommentTime < 3000) {
+    console.log('⚠️ Bỏ qua comment duplicate');
     return;
   }
   lastCommentTime = now;
@@ -265,6 +292,7 @@ function setupCommentTracking() {
       if (commentElement.dataset.tracked) return; // Đã track rồi
       
       commentElement.dataset.tracked = 'true';
+      console.log('🎯 Đã track comment element:', selector);
       
       // Tìm submit button gần nhất
       let submitButton = null;
@@ -281,16 +309,36 @@ function setupCommentTracking() {
       }
       
       if (submitButton) {
+        console.log('🔍 Tìm thấy submit button:', submitButton);
+        
         // Lắng nghe sự kiện submit
         submitButton.addEventListener('click', async (e) => {
-          await handleCommentSubmit(commentElement, submitButton);
+          console.log('🖱️ Submit button clicked');
+          // Delay để đảm bảo comment đã được nhập
+          setTimeout(() => {
+            handleCommentSubmit(commentElement, submitButton);
+          }, 100);
         });
         
         // Lắng nghe Enter key
         commentElement.addEventListener('keydown', async (e) => {
           if (e.key === 'Enter' && !e.shiftKey) {
+            console.log('⌨️ Enter pressed');
             e.preventDefault();
-            await handleCommentSubmit(commentElement, submitButton);
+            // Delay để đảm bảo comment đã được nhập
+            setTimeout(() => {
+              handleCommentSubmit(commentElement, submitButton);
+            }, 100);
+          }
+        });
+        
+        // Lắng nghe input events để capture paste
+        commentElement.addEventListener('input', async (e) => {
+          console.log('📝 Input event detected');
+          // Lưu comment tạm thời
+          const content = getCommentContent(commentElement);
+          if (content) {
+            console.log('💾 Comment content:', content.substring(0, 50) + '...');
           }
         });
       }
