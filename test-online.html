@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Server Online</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .result {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        .error {
+            background: rgba(255, 0, 0, 0.3);
+        }
+        .success {
+            background: rgba(0, 255, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Server Online</h1>
+        <p>Server URL: <strong>https://employee-tracker-2np8.onrender.com</strong></p>
+        
+        <div class="test-section">
+            <h3>🔍 Test Health Check</h3>
+            <button onclick="testHealth()">Test Health</button>
+            <div id="healthResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>👥 Test Employees API</h3>
+            <button onclick="testEmployees()">Test Employees</button>
+            <div id="employeesResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Test Data API</h3>
+            <button onclick="testData()">Test Data</button>
+            <div id="dataResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>➕ Test Add Employee</h3>
+            <button onclick="testAddEmployee()">Add Test Employee</button>
+            <div id="addEmployeeResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📝 Test Add Activity</h3>
+            <button onclick="testAddActivity()">Add Test Activity</button>
+            <div id="addActivityResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>💬 Test Add Comment</h3>
+            <button onclick="testAddComment()">Add Test Comment</button>
+            <div id="addCommentResult" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const SERVER_URL = 'https://employee-tracker-2np8.onrender.com';
+        
+        async function testHealth() {
+            const resultDiv = document.getElementById('healthResult');
+            resultDiv.textContent = 'Testing...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/health`);
+                const data = await response.json();
+                resultDiv.textContent = `✅ Success: ${JSON.stringify(data, null, 2)}`;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        async function testEmployees() {
+            const resultDiv = document.getElementById('employeesResult');
+            resultDiv.textContent = 'Testing...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/employees`);
+                const data = await response.json();
+                resultDiv.textContent = `✅ Success: ${JSON.stringify(data, null, 2)}`;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        async function testData() {
+            const resultDiv = document.getElementById('dataResult');
+            resultDiv.textContent = 'Testing...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/data`);
+                const data = await response.json();
+                resultDiv.textContent = `✅ Success: ${JSON.stringify(data, null, 2)}`;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        async function testAddEmployee() {
+            const resultDiv = document.getElementById('addEmployeeResult');
+            resultDiv.textContent = 'Testing...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/employees`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        employeeId: 'TEST001',
+                        employeeName: 'Test Employee',
+                        position: 'Tester',
+                        department: 'Testing'
+                    })
+                });
+                const data = await response.json();
+                resultDiv.textContent = `✅ Success: ${JSON.stringify(data, null, 2)}`;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        async function testAddActivity() {
+            const resultDiv = document.getElementById('addActivityResult');
+            resultDiv.textContent = 'Testing...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/activity`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        employeeId: 'TEST001',
+                        employeeName: 'Test Employee',
+                        startTime: new Date().toISOString()
+                    })
+                });
+                const data = await response.json();
+                resultDiv.textContent = `✅ Success: ${JSON.stringify(data, null, 2)}`;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        async function testAddComment() {
+            const resultDiv = document.getElementById('addCommentResult');
+            resultDiv.textContent = 'Testing...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/comment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        employeeId: 'TEST001',
+                        employeeName: 'Test Employee',
+                        comment: 'Test comment from browser',
+                        time: new Date().toISOString()
+                    })
+                });
+                const data = await response.json();
+                resultDiv.textContent = `✅ Success: ${JSON.stringify(data, null, 2)}`;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = `❌ Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+    </script>
+</body>
+</html> 
