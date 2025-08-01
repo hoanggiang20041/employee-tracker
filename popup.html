@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Employee Tracker</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        width: 350px;
+        padding: 20px;
+        margin: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+      
+      .container {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 20px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+      
+      h1 {
+        margin: 0 0 20px 0;
+        font-size: 18px;
+        text-align: center;
+        color: #fff;
+      }
+      
+      .input-group {
+        margin-bottom: 15px;
+      }
+      
+      .input-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.8);
+      }
+      
+      input {
+        width: 100%;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #333;
+        font-size: 14px;
+        box-sizing: border-box;
+      }
+      
+      input:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+      }
+      
+      input.error {
+        border: 2px solid #f44336;
+        background: rgba(244, 67, 54, 0.1);
+      }
+      
+      .validation-message {
+        font-size: 11px;
+        margin-top: 3px;
+        color: #ffeb3b;
+      }
+      
+      .validation-message.error {
+        color: #f44336;
+      }
+      
+      .button-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+      }
+      
+      button {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+      
+      #startBtn {
+        background: #4CAF50;
+        color: white;
+      }
+      
+      #startBtn:hover {
+        background: #45a049;
+        transform: translateY(-1px);
+      }
+      
+      #startBtn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+      }
+      
+      #stopBtn {
+        background: #f44336;
+        color: white;
+      }
+      
+      #stopBtn:hover {
+        background: #da190b;
+        transform: translateY(-1px);
+      }
+      
+      #stopBtn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+        transform: none;
+      }
+      
+      .status {
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 10px;
+        font-size: 12px;
+        text-align: center;
+      }
+      
+      .status.success {
+        background: rgba(76, 175, 80, 0.3);
+        border: 1px solid rgba(76, 175, 80, 0.5);
+      }
+      
+      .status.error {
+        background: rgba(244, 67, 54, 0.3);
+        border: 1px solid rgba(244, 67, 54, 0.5);
+      }
+      
+      .status.info {
+        background: rgba(33, 150, 243, 0.3);
+        border: 1px solid rgba(33, 150, 243, 0.5);
+      }
+      
+      .timer {
+        text-align: center;
+        font-size: 14px;
+        margin-top: 10px;
+        padding: 10px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 5px;
+      }
+      
+      .employee-info {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 5px;
+        padding: 10px;
+        margin-top: 10px;
+        font-size: 12px;
+      }
+      
+      .help-text {
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.7);
+        margin-top: 5px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>📊 Employee Tracker</h1>
+      
+      <div class="input-group">
+        <label for="employeeId">Mã nhân viên *</label>
+        <input id="employeeId" placeholder="VD: NV001, EMP001" />
+        <div class="validation-message" id="employeeIdValidation"></div>
+      </div>
+      
+      <div class="input-group">
+        <label for="employeeName">Tên nhân viên *</label>
+        <input id="employeeName" placeholder="Nhập họ tên đầy đủ" />
+        <div class="validation-message" id="employeeNameValidation"></div>
+      </div>
+      
+      <div class="button-group">
+        <button id="startBtn">▶️ Bắt đầu</button>
+        <button id="stopBtn" disabled>⏹️ Dừng</button>
+      </div>
+      
+      <div id="status" class="status info">Sẵn sàng theo dõi</div>
+      <div id="timer" class="timer" style="display: none;"></div>
+      <div id="employeeInfo" class="employee-info" style="display: none;"></div>
+      
+      <div class="help-text">
+        💡 Mã nhân viên: NV001, EMP001, E001<br>
+        💡 Tên nhân viên: Họ tên đầy đủ
+      </div>
+    </div>
+    
+    <script src="popup.js"></script>
+  </body>
+</html>

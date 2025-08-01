@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Facebook Comment Tracking</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f0f2f5;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #1877f2;
+        }
+        
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid #e4e6ea;
+        }
+        
+        .test-section h3 {
+            color: #1877f2;
+            margin-bottom: 15px;
+        }
+        
+        .facebook-post {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .post-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .post-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #1877f2;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .post-content {
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        .comment-box {
+            background: #f0f2f5;
+            border-radius: 20px;
+            padding: 10px 15px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .comment-input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 8px;
+            outline: none;
+            font-size: 14px;
+            min-height: 20px;
+            max-height: 100px;
+            resize: none;
+        }
+        
+        .comment-input[contenteditable="true"] {
+            min-height: 20px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        
+        .submit-btn {
+            background: #1877f2;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 16px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .submit-btn:hover {
+            background: #166fe5;
+        }
+        
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .test-button {
+            background: #42a5f5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        .test-button:hover {
+            background: #1976d2;
+        }
+        
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .success {
+            background: #e8f5e8;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+        }
+        
+        .error {
+            background: #ffebee;
+            border: 1px solid #f44336;
+            color: #c62828;
+        }
+        
+        .info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            color: #1565c0;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        
+        .status-online {
+            background: #4caf50;
+        }
+        
+        .status-offline {
+            background: #f44336;
+        }
+        
+        .debug-info {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Facebook Comment Tracking</h1>
+        
+        <div class="test-section">
+            <h3>🔧 Extension Status</h3>
+            <div id="extensionStatus">
+                <span class="status-indicator status-offline"></span>
+                <span>Extension: Đang kiểm tra...</span>
+            </div>
+            <button class="test-button" onclick="checkExtensionStatus()">🔄 Kiểm tra trạng thái</button>
+            <div id="extensionResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📝 Test Post Composer (Mô phỏng Facebook)</h3>
+            <div class="facebook-post">
+                <div class="post-header">
+                    <div class="post-avatar">T</div>
+                    <div>
+                        <div style="font-weight: bold;">Test User</div>
+                        <div style="font-size: 12px; color: #666;">Bây giờ</div>
+                    </div>
+                </div>
+                <div class="post-content">
+                    Đây là một bài post test để kiểm tra comment tracking...
+                </div>
+                <div class="comment-box">
+                    <div contenteditable="true" class="comment-input" 
+                         data-testid="comment-composer-text-input" 
+                         placeholder="Viết bình luận..." 
+                         role="textbox"></div>
+                    <button class="submit-btn" data-testid="comment-composer-submit-button" onclick="submitComment()">
+                        💬 Bình luận
+                    </button>
+                </div>
+            </div>
+            <div id="commentResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📝 Test Post Composer</h3>
+            <div class="facebook-post">
+                <div class="post-header">
+                    <div class="post-avatar">U</div>
+                    <div>
+                        <div style="font-weight: bold;">User</div>
+                        <div style="font-size: 12px; color: #666;">Bây giờ</div>
+                    </div>
+                </div>
+                <div class="comment-box">
+                    <div contenteditable="true" class="comment-input" 
+                         data-testid="post-composer-text-input" 
+                         placeholder="Bạn đang nghĩ gì?" 
+                         role="textbox"></div>
+                    <button class="submit-btn" data-testid="composer-post-button" onclick="submitPost()">
+                        📝 Đăng
+                    </button>
+                </div>
+            </div>
+            <div id="postResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 Debug Information</h3>
+            <div class="debug-info" id="debugInfo">
+                Đang tải thông tin debug...
+            </div>
+            <button class="test-button" onclick="updateDebugInfo()">🔄 Cập nhật Debug</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Test Server Communication</h3>
+            <button class="test-button" onclick="testServerConnection()">🌐 Test Server</button>
+            <button class="test-button" onclick="testEmployeeValidation()">👤 Test Employee</button>
+            <button class="test-button" onclick="sendTestComment()">📤 Gửi Test Comment</button>
+            <div id="serverResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>💡 Hướng dẫn Test</h3>
+            <div class="result info">
+                <strong>Bước 1:</strong> Mở Extension và bắt đầu tracking với nhân viên hợp lệ<br>
+                <strong>Bước 2:</strong> Nhập comment vào các ô test ở trên<br>
+                <strong>Bước 3:</strong> Click nút "Bình luận" hoặc "Đăng"<br>
+                <strong>Bước 4:</strong> Kiểm tra console để xem log tracking<br>
+                <strong>Bước 5:</strong> Vào Facebook thực tế và thử comment<br>
+                <strong>Bước 6:</strong> Kiểm tra admin dashboard để xem kết quả
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const SERVER_URL = 'http://localhost:3000';
+        
+        // Kiểm tra extension status
+        async function checkExtensionStatus() {
+            const resultDiv = document.getElementById('extensionResult');
+            const statusDiv = document.getElementById('extensionStatus');
+            
+            try {
+                const response = await chrome.runtime.sendMessage({ action: 'getStatus' });
+                const { isTracking, employeeId, employeeName } = response;
+                
+                if (isTracking) {
+                    statusDiv.innerHTML = `
+                        <span class="status-indicator status-online"></span>
+                        <span>Extension: Đang tracking ${employeeName} (${employeeId})</span>
+                    `;
+                    resultDiv.innerHTML = `
+                        <strong>✅ Extension đang hoạt động</strong><br>
+                        Tracking: ON<br>
+                        Employee: ${employeeName} (${employeeId})
+                    `;
+                    resultDiv.className = 'result success';
+                } else {
+                    statusDiv.innerHTML = `
+                        <span class="status-indicator status-offline"></span>
+                        <span>Extension: Chưa tracking</span>
+                    `;
+                    resultDiv.innerHTML = `
+                        <strong>⚠️ Extension chưa tracking</strong><br>
+                        Vui lòng mở extension và bắt đầu tracking
+                    `;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <span class="status-indicator status-offline"></span>
+                    <span>Extension: Không kết nối được</span>
+                `;
+                resultDiv.innerHTML = `<strong>❌ Lỗi kết nối Extension:</strong> ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        function submitComment() {
+            const commentInput = document.querySelector('[data-testid="comment-composer-text-input"]');
+            const comment = commentInput.innerText || commentInput.textContent;
+            
+            if (!comment.trim()) {
+                showResult('commentResult', '❌ Vui lòng nhập comment trước khi gửi!', 'error');
+                return;
+            }
+            
+            // Mô phỏng sự kiện Enter
+            const enterEvent = new KeyboardEvent('keydown', {
+                key: 'Enter',
+                bubbles: true
+            });
+            commentInput.dispatchEvent(enterEvent);
+            
+            // Mô phỏng click nút gửi
+            setTimeout(() => {
+                const submitEvent = new MouseEvent('click', {
+                    bubbles: true
+                });
+                document.querySelector('[data-testid="comment-composer-submit-button"]').dispatchEvent(submitEvent);
+            }, 100);
+            
+            showResult('commentResult', `✅ Đã gửi comment test: "${comment.substring(0, 50)}..."`, 'success');
+            commentInput.innerText = '';
+        }
+        
+        function submitPost() {
+            const postInput = document.querySelector('[data-testid="post-composer-text-input"]');
+            const post = postInput.innerText || postInput.textContent;
+            
+            if (!post.trim()) {
+                showResult('postResult', '❌ Vui lòng nhập nội dung trước khi đăng!', 'error');
+                return;
+            }
+            
+            // Mô phỏng sự kiện Enter
+            const enterEvent = new KeyboardEvent('keydown', {
+                key: 'Enter',
+                bubbles: true
+            });
+            postInput.dispatchEvent(enterEvent);
+            
+            // Mô phỏng click nút gửi
+            setTimeout(() => {
+                const submitEvent = new MouseEvent('click', {
+                    bubbles: true
+                });
+                document.querySelector('[data-testid="composer-post-button"]').dispatchEvent(submitEvent);
+            }, 100);
+            
+            showResult('postResult', `✅ Đã gửi post test: "${post.substring(0, 50)}..."`, 'success');
+            postInput.innerText = '';
+        }
+        
+        function updateDebugInfo() {
+            const debugDiv = document.getElementById('debugInfo');
+            const contentEditableElements = document.querySelectorAll('[contenteditable="true"]');
+            const submitButtons = document.querySelectorAll('button[data-testid*="submit"], button[data-testid*="post"], button[data-testid*="comment"]');
+            
+            debugDiv.innerHTML = `
+                <strong>Debug Information:</strong><br>
+                - URL: ${window.location.href}<br>
+                - User Agent: ${navigator.userAgent.substring(0, 50)}...<br>
+                - Content Editable Elements: ${contentEditableElements.length}<br>
+                - Submit Buttons: ${submitButtons.length}<br>
+                - Extension Available: ${typeof chrome !== 'undefined' && chrome.runtime ? 'Yes' : 'No'}<br>
+                - Server URL: ${SERVER_URL}<br>
+                - Timestamp: ${new Date().toLocaleString()}
+            `;
+        }
+        
+        async function testServerConnection() {
+            try {
+                const response = await fetch(`${SERVER_URL}/health`);
+                const data = await response.json();
+                
+                showResult('serverResult', `
+                    <strong>✅ Server Connection OK</strong><br>
+                    Status: ${data.status}<br>
+                    Activities: ${data.dataCount.activities}<br>
+                    Comments: ${data.dataCount.comments}<br>
+                    Employees: ${data.dataCount.employees}
+                `, 'success');
+            } catch (error) {
+                showResult('serverResult', `❌ Server Connection Failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testEmployeeValidation() {
+            try {
+                const response = await fetch(`${SERVER_URL}/validate-employee`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        employeeId: 'TEST001',
+                        employeeName: 'Test Employee'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                showResult('serverResult', `
+                    <strong>Employee Validation Test:</strong><br>
+                    Valid: ${result.isValid ? 'Yes' : 'No'}<br>
+                    Message: ${result.message}<br>
+                    Employee: ${result.employee ? JSON.stringify(result.employee) : 'N/A'}
+                `, result.isValid ? 'success' : 'error');
+            } catch (error) {
+                showResult('serverResult', `❌ Employee Validation Failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function sendTestComment() {
+            try {
+                const response = await fetch(`${SERVER_URL}/comment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        employeeId: 'TEST001',
+                        employeeName: 'Test Employee',
+                        comment: `Test comment từ ${new Date().toLocaleString()}`,
+                        time: new Date().toISOString()
+                    })
+                });
+                
+                if (response.ok) {
+                    showResult('serverResult', '✅ Test comment đã được gửi thành công', 'success');
+                } else {
+                    const errorData = await response.json();
+                    showResult('serverResult', `❌ Lỗi khi gửi test comment: ${errorData.error}`, 'error');
+                }
+            } catch (error) {
+                showResult('serverResult', `❌ Lỗi kết nối server: ${error.message}`, 'error');
+            }
+        }
+        
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = message;
+            element.className = `result ${type}`;
+        }
+        
+        // Auto test khi page load
+        window.onload = function() {
+            setTimeout(() => {
+                checkExtensionStatus();
+                updateDebugInfo();
+            }, 1000);
+        };
+    </script>
+</body>
+</html> 

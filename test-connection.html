@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Connection - Employee Tracker</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .test-button:hover {
+            background: #45a049;
+        }
+        
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        
+        .success {
+            background: rgba(76, 175, 80, 0.3);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+        }
+        
+        .error {
+            background: rgba(244, 67, 54, 0.3);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+        }
+        
+        .info {
+            background: rgba(33, 150, 243, 0.3);
+            border: 1px solid rgba(33, 150, 243, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Connection - Employee Tracker</h1>
+        
+        <div class="test-section">
+            <h3>🌐 Server Connection Test</h3>
+            <button class="test-button" onclick="testHealth()">Test Health Check</button>
+            <button class="test-button" onclick="testData()">Test Data API</button>
+            <button class="test-button" onclick="testEmployees()">Test Employees API</button>
+            <div id="healthResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Test Data Operations</h3>
+            <button class="test-button" onclick="testAddActivity()">Add Test Activity</button>
+            <button class="test-button" onclick="testAddComment()">Add Test Comment</button>
+            <button class="test-button" onclick="clearAllData()">Clear All Data</button>
+            <div id="dataResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔗 Connection Info</h3>
+            <div id="connectionInfo" class="result info">
+                <strong>Server URL:</strong> http://localhost:3000<br>
+                <strong>Status:</strong> Testing...
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const SERVER_URL = 'http://localhost:3000';
+        
+        async function testHealth() {
+            const resultDiv = document.getElementById('healthResult');
+            resultDiv.innerHTML = 'Testing...';
+            resultDiv.className = 'result info';
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/health`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <strong>✅ Health Check Success!</strong><br>
+                    Status: ${data.status}<br>
+                    Timestamp: ${data.timestamp}<br>
+                    Activities: ${data.dataCount.activities}<br>
+                    Comments: ${data.dataCount.comments}
+                `;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.innerHTML = `<strong>❌ Health Check Failed!</strong><br>Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        async function testData() {
+            const resultDiv = document.getElementById('dataResult');
+            resultDiv.innerHTML = 'Testing...';
+            resultDiv.className = 'result info';
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/data`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <strong>✅ Data API Success!</strong><br>
+                    Activities: ${data.total.activities}<br>
+                    Comments: ${data.total.comments}
+                `;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.innerHTML = `<strong>❌ Data API Failed!</strong><br>Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        async function testEmployees() {
+            const resultDiv = document.getElementById('dataResult');
+            resultDiv.innerHTML = 'Testing...';
+            resultDiv.className = 'result info';
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/employees`);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <strong>✅ Employees API Success!</strong><br>
+                    Total Employees: ${data.length}<br>
+                    ${data.map(emp => `- ${emp.employeeId}: ${emp.totalActivities} activities, ${emp.totalComments} comments`).join('<br>')}
+                `;
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.innerHTML = `<strong>❌ Employees API Failed!</strong><br>Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        async function testAddActivity() {
+            const resultDiv = document.getElementById('dataResult');
+            resultDiv.innerHTML = 'Adding test activity...';
+            resultDiv.className = 'result info';
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/activity`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        employeeId: 'TEST001',
+                        startTime: new Date().toISOString()
+                    })
+                });
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = '<strong>✅ Test Activity Added Successfully!</strong>';
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = `<strong>❌ Failed to add activity!</strong><br>Status: ${response.status}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<strong>❌ Error adding activity!</strong><br>Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        async function testAddComment() {
+            const resultDiv = document.getElementById('dataResult');
+            resultDiv.innerHTML = 'Adding test comment...';
+            resultDiv.className = 'result info';
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/comment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        employeeId: 'TEST001',
+                        comment: 'This is a test comment from connection test',
+                        time: new Date().toISOString()
+                    })
+                });
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = '<strong>✅ Test Comment Added Successfully!</strong>';
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = `<strong>❌ Failed to add comment!</strong><br>Status: ${response.status}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<strong>❌ Error adding comment!</strong><br>Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        async function clearAllData() {
+            if (!confirm('Are you sure you want to clear all data?')) return;
+            
+            const resultDiv = document.getElementById('dataResult');
+            resultDiv.innerHTML = 'Clearing all data...';
+            resultDiv.className = 'result info';
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/data`, { method: 'DELETE' });
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = '<strong>✅ All Data Cleared Successfully!</strong>';
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = `<strong>❌ Failed to clear data!</strong><br>Status: ${response.status}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<strong>❌ Error clearing data!</strong><br>Error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+        
+        // Auto test on page load
+        window.onload = function() {
+            testHealth();
+        };
+    </script>
+</body>
+</html> 

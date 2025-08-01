@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Comment Tracking - Employee Tracker</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .test-button:hover {
+            background: #45a049;
+        }
+        
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        
+        .success {
+            background: rgba(76, 175, 80, 0.3);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+        }
+        
+        .error {
+            background: rgba(244, 67, 54, 0.3);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+        }
+        
+        .info {
+            background: rgba(33, 150, 243, 0.3);
+            border: 1px solid rgba(33, 150, 243, 0.5);
+        }
+        
+        .comment-box {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            color: #333;
+        }
+        
+        .comment-input {
+            width: 100%;
+            min-height: 60px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: inherit;
+            resize: vertical;
+        }
+        
+        .submit-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        
+        .submit-btn:hover {
+            background: #1976D2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Comment Tracking - Employee Tracker</h1>
+        
+        <div class="test-section">
+            <h3>📝 Test Comment Input</h3>
+            <p>Mô phỏng comment box trên Facebook để test tracking:</p>
+            
+            <div class="comment-box">
+                <div contenteditable="true" class="comment-input" id="testCommentBox" 
+                     data-testid="post-composer-text-input" role="textbox" 
+                     placeholder="Nhập comment test ở đây..."></div>
+                <button class="submit-btn" data-testid="composer-post-button" onclick="submitTestComment()">
+                    🚀 Gửi Comment Test
+                </button>
+            </div>
+            
+            <div id="commentResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 Test Extension Status</h3>
+            <button class="test-button" onclick="checkExtensionStatus()">Kiểm tra trạng thái Extension</button>
+            <button class="test-button" onclick="testContentScript()">Test Content Script</button>
+            <div id="extensionResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Test Server Communication</h3>
+            <button class="test-button" onclick="testServerComment()">Gửi Comment Test đến Server</button>
+            <button class="test-button" onclick="checkServerData()">Kiểm tra dữ liệu Server</button>
+            <div id="serverResult" class="result"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>💡 Hướng dẫn Test</h3>
+            <div class="result info">
+                <strong>Bước 1:</strong> Mở Extension và bắt đầu tracking với mã nhân viên hợp lệ<br>
+                <strong>Bước 2:</strong> Nhập comment vào ô test ở trên và click "Gửi Comment Test"<br>
+                <strong>Bước 3:</strong> Kiểm tra console để xem log tracking<br>
+                <strong>Bước 4:</strong> Vào Facebook thực tế và thử comment<br>
+                <strong>Bước 5:</strong> Kiểm tra admin dashboard để xem kết quả
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const SERVER_URL = 'http://localhost:3000';
+        
+        function submitTestComment() {
+            const commentBox = document.getElementById('testCommentBox');
+            const comment = commentBox.innerText || commentBox.textContent;
+            
+            if (!comment.trim()) {
+                showResult('commentResult', '❌ Vui lòng nhập comment trước khi gửi!', 'error');
+                return;
+            }
+            
+            // Mô phỏng sự kiện Enter
+            const enterEvent = new KeyboardEvent('keydown', {
+                key: 'Enter',
+                bubbles: true
+            });
+            commentBox.dispatchEvent(enterEvent);
+            
+            // Mô phỏng click nút gửi
+            setTimeout(() => {
+                const submitEvent = new MouseEvent('click', {
+                    bubbles: true
+                });
+                document.querySelector('[data-testid="composer-post-button"]').dispatchEvent(submitEvent);
+            }, 100);
+            
+            showResult('commentResult', `✅ Đã gửi comment test: "${comment.substring(0, 50)}..."`, 'success');
+        }
+        
+        async function checkExtensionStatus() {
+            try {
+                // Kiểm tra xem extension có đang chạy không
+                const response = await chrome.runtime.sendMessage({ action: 'getStatus' });
+                showResult('extensionResult', `
+                    <strong>✅ Extension Status:</strong><br>
+                    Tracking: ${response.isTracking ? 'ON' : 'OFF'}<br>
+                    Employee ID: ${response.employeeId || 'N/A'}<br>
+                    Employee Name: ${response.employeeName || 'N/A'}<br>
+                    Start Time: ${response.startTime ? new Date(response.startTime).toLocaleString() : 'N/A'}
+                `, 'success');
+            } catch (error) {
+                showResult('extensionResult', `❌ Không thể kết nối với Extension: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testContentScript() {
+            try {
+                // Test content script bằng cách inject vào page hiện tại
+                const result = await chrome.tabs.query({ active: true, currentWindow: true });
+                if (result.length > 0) {
+                    await chrome.scripting.executeScript({
+                        target: { tabId: result[0].id },
+                        func: () => {
+                            console.log('🧪 Testing content script...');
+                            return 'Content script is working';
+                        }
+                    });
+                    showResult('extensionResult', '✅ Content script đang hoạt động', 'success');
+                } else {
+                    showResult('extensionResult', '❌ Không tìm thấy tab active', 'error');
+                }
+            } catch (error) {
+                showResult('extensionResult', `❌ Lỗi test content script: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testServerComment() {
+            try {
+                const testComment = {
+                    employeeId: 'TEST001',
+                    employeeName: 'Test Employee',
+                    comment: `Test comment từ ${new Date().toLocaleString()}`,
+                    time: new Date().toISOString()
+                };
+                
+                const response = await fetch(`${SERVER_URL}/comment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testComment)
+                });
+                
+                if (response.ok) {
+                    showResult('serverResult', '✅ Đã gửi comment test đến server thành công', 'success');
+                } else {
+                    showResult('serverResult', `❌ Lỗi server: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                showResult('serverResult', `❌ Lỗi kết nối server: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkServerData() {
+            try {
+                const response = await fetch(`${SERVER_URL}/data`);
+                const data = await response.json();
+                
+                showResult('serverResult', `
+                    <strong>📊 Server Data:</strong><br>
+                    Activities: ${data.total.activities}<br>
+                    Comments: ${data.total.comments}<br>
+                    Latest Comment: ${data.comments.length > 0 ? data.comments[data.comments.length - 1].comment.substring(0, 50) + '...' : 'N/A'}
+                `, 'success');
+            } catch (error) {
+                showResult('serverResult', `❌ Lỗi khi lấy dữ liệu server: ${error.message}`, 'error');
+            }
+        }
+        
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = message;
+            element.className = `result ${type}`;
+        }
+        
+        // Auto test khi page load
+        window.onload = function() {
+            setTimeout(() => {
+                checkExtensionStatus();
+            }, 1000);
+        };
+    </script>
+</body>
+</html> 
