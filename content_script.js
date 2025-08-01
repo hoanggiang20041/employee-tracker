@@ -6,6 +6,7 @@ let isTracking = false;
 let currentEmployeeId = null;
 let currentEmployeeName = null;
 let lastCommentTime = 0; // Tránh duplicate comment
+let pendingComments = new Map(); // Lưu comment đang chờ gửi
 
 // Load tracking status từ localStorage khi script khởi động
 function loadTrackingStatusFromStorage() {
@@ -151,34 +152,21 @@ function findCommentBox() {
     }
   }
   
-  console.log('⚠️ Không tìm thấy comment box');
   return null;
 }
 
-// Tìm nút gửi comment/post
+// Tìm submit button
 function findSubmitButton() {
   const selectors = [
-    // Post buttons
     '[data-testid="composer-post-button"]',
-    '[data-testid="post-composer-submit-button"]',
-    '[aria-label="Đăng"]',
-    '[aria-label="Post"]',
-    
-    // Comment buttons
-    '[data-testid="comment-composer-submit-button"]',
+    '[data-testid="composer-submit-button"]',
     '[aria-label="Comment"]',
-    '[aria-label="Bình luận"]',
-    
-    // Generic submit buttons
+    '[aria-label="Post"]',
+    '[aria-label="Đăng"]',
     'button[type="submit"]',
     'button[data-testid*="submit"]',
     'button[data-testid*="post"]',
-    'button[data-testid*="comment"]',
-    
-    // Facebook specific
-    'button[aria-label*="post"]',
-    'button[aria-label*="comment"]',
-    'button[aria-label*="submit"]'
+    'button[data-testid*="comment"]'
   ];
   
   for (const selector of selectors) {
@@ -195,6 +183,72 @@ function findSubmitButton() {
   }
   
   return null;
+}
+
+// Kiểm tra và gỡ block comment
+async function checkAndUnblockComment() {
+  try {
+    // Kiểm tra xem có thông báo block không
+    const blockSelectors = [
+      '[data-testid="block-notification"]',
+      '[aria-label*="block"]',
+      '[aria-label*="khóa"]',
+      'div[role="alert"]',
+      '.block-notification',
+      '.restriction-notice'
+    ];
+    
+    for (const selector of blockSelectors) {
+      const blockElement = document.querySelector(selector);
+      if (blockElement) {
+        console.log('🚫 Phát hiện thông báo block comment');
+        
+        // Tìm link gỡ block
+        const unblockLink = document.querySelector('a[href*="help/contact"]') || 
+                           document.querySelector('a[href*="571927962827151"]');
+        
+        if (unblockLink) {
+          console.log('🔗 Tìm thấy link gỡ block, mở trang...');
+          window.open(unblockLink.href, '_blank');
+          
+          // Tự động điền form gỡ block
+          setTimeout(() => {
+            const unblockForm = document.querySelector('form');
+            if (unblockForm) {
+              const textArea = unblockForm.querySelector('textarea');
+              if (textArea) {
+                textArea.value = 'Gỡ khóa comment cho tôi. Tôi không vi phạm quy định nào.';
+                console.log('📝 Đã điền form gỡ block');
+                
+                // Tìm nút gửi và click
+                const submitBtn = unblockForm.querySelector('button[type="submit"]') ||
+                                unblockForm.querySelector('input[type="submit"]');
+                if (submitBtn) {
+                  submitBtn.click();
+                  console.log('📤 Đã gửi yêu cầu gỡ block');
+                }
+              }
+            }
+          }, 2000);
+        }
+        break;
+      }
+    }
+  } catch (error) {
+    console.error('❌ Lỗi khi kiểm tra block comment:', error);
+  }
+}
+
+// Lưu comment đang chờ gửi
+function savePendingComment(comment, commentBox) {
+  const commentId = Date.now();
+  pendingComments.set(commentId, {
+    comment: comment,
+    commentBox: commentBox,
+    timestamp: Date.now()
+  });
+  console.log('💾 Lưu comment đang chờ:', comment.substring(0, 50));
+  return commentId;
 }
 
 // Xử lý comment khi nhấn Enter
@@ -230,7 +284,8 @@ async function handleEnterComment(event) {
         
         if (comment && comment.trim().length > 0) {
           console.log('💬 Phát hiện comment qua Enter:', comment.substring(0, 50));
-          sendComment(comment);
+          // Lưu comment đang chờ gửi
+          savePendingComment(comment, active);
         } else {
           console.log('⚠️ Không tìm thấy nội dung comment qua Enter');
         }
@@ -299,7 +354,17 @@ async function handleSubmitComment(event) {
         
         if (comment && comment.trim().length > 0) {
           console.log('💬 Phát hiện comment qua nút gửi:', comment.substring(0, 50));
+          // Gửi comment thực sự
           sendComment(comment);
+          
+          // Xóa comment khỏi pending
+          for (const [id, pending] of pendingComments.entries()) {
+            if (pending.comment === comment) {
+              pendingComments.delete(id);
+              console.log('🗑️ Xóa comment khỏi pending sau khi gửi');
+              break;
+            }
+          }
         } else {
           console.log('⚠️ Không tìm thấy nội dung comment');
         }
@@ -423,7 +488,8 @@ function setupClipboardObserver() {
         const comment = activeElement.innerText || activeElement.textContent;
         if (comment && comment.trim().length > 0) {
           console.log('📋 Phát hiện comment qua paste:', comment.substring(0, 50));
-          sendComment(comment);
+          // Lưu comment đang chờ gửi
+          savePendingComment(comment, activeElement);
         }
       }, 500);
     }
@@ -449,6 +515,19 @@ function setupClipboardObserver() {
   });
 }
 
+// Kiểm tra block comment định kỳ
+function setupBlockChecker() {
+  console.log('🚫 Thiết lập block checker');
+  
+  // Kiểm tra mỗi 30 giây
+  setInterval(async () => {
+    const isTracking = await checkTrackingStatus();
+    if (isTracking) {
+      await checkAndUnblockComment();
+    }
+  }, 30000);
+}
+
 // Load tracking status khi script khởi động
 loadTrackingStatusFromStorage();
 
@@ -462,6 +541,7 @@ document.addEventListener('click', handleSubmitComment);
 setupCommentObserver();
 setupFormObserver();
 setupClipboardObserver();
+setupBlockChecker();
 
 // Kiểm tra trạng thái tracking định kỳ
 setInterval(checkTrackingStatus, 3000);
