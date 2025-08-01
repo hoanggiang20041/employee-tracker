@@ -1,5 +1,6 @@
 // Content script cho Facebook tracking
-console.log('Content script đã được nạp!');
+console.log('🚀 Content script đã được nạp trên Facebook!');
+console.log('📍 URL hiện tại:', window.location.href);
 
 let isTracking = false;
 let currentEmployeeId = null;
@@ -14,6 +15,12 @@ async function checkTrackingStatus() {
     currentEmployeeId = response.employeeId;
     currentEmployeeName = response.employeeName;
     console.log('📊 Tracking status:', { isTracking, currentEmployeeId, currentEmployeeName });
+    
+    // Dispatch custom event để debug page có thể lắng nghe
+    document.dispatchEvent(new CustomEvent('tracking-status-updated', {
+      detail: { isTracking, currentEmployeeId, currentEmployeeName }
+    }));
+    
     return isTracking;
   } catch (error) {
     console.error('❌ Lỗi khi kiểm tra trạng thái tracking:', error);
@@ -43,6 +50,11 @@ async function sendComment(comment) {
       comment: comment.substring(0, 100) + (comment.length > 100 ? '...' : ''),
       time: new Date().toISOString()
     });
+    
+    // Dispatch custom event để debug
+    document.dispatchEvent(new CustomEvent('comment-detected', {
+      detail: { comment: comment.trim(), employeeId: currentEmployeeId, employeeName: currentEmployeeName }
+    }));
     
     const response = await fetch('https://employee-tracker-2np8.onrender.com/comment', {
       method: 'POST',

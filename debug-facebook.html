@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Facebook Comment Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        .test-section {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        .comment-box {
+            background: white;
+            color: black;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+        }
+        .comment-box:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .log {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: rgba(0, 255, 0, 0.3);
+        }
+        .status.error {
+            background: rgba(255, 0, 0, 0.3);
+        }
+        .status.warning {
+            background: rgba(255, 165, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐛 Debug Facebook Comment Detection</h1>
+        
+        <div class="test-section">
+            <h3>📊 Extension Status</h3>
+            <div id="extensionStatus" class="status warning">Đang kiểm tra extension...</div>
+            <button onclick="checkExtensionStatus()">Kiểm tra Extension</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 Test Comment Detection</h3>
+            <p>Mô phỏng Facebook comment box:</p>
+            
+            <div class="comment-box" contenteditable="true" data-testid="comment-composer-text-input" role="textbox" aria-label="Viết bình luận...">
+                Nhập comment test ở đây...
+            </div>
+            
+            <button onclick="simulateComment()">Simulate Comment</button>
+            <button onclick="simulateEnter()">Simulate Enter Key</button>
+            <button onclick="simulateSubmit()">Simulate Submit</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📝 Test Post Composer</h3>
+            <div class="comment-box" contenteditable="true" data-testid="post-composer-text-input" role="textbox" aria-label="Bạn đang nghĩ gì?">
+                Nhập post test ở đây...
+            </div>
+            
+            <button onclick="simulatePost()">Simulate Post</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📋 Debug Logs</h3>
+            <button onclick="clearLogs()">Clear Logs</button>
+            <div id="debugLogs" class="log"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔧 Manual Test</h3>
+            <button onclick="testServerConnection()">Test Server Connection</button>
+            <button onclick="testTrackingStatus()">Test Tracking Status</button>
+            <div id="manualTestResult" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        // Debug logging
+        function log(message, type = 'info') {
+            const logs = document.getElementById('debugLogs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            logs.appendChild(logEntry);
+            logs.scrollTop = logs.scrollHeight;
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function clearLogs() {
+            document.getElementById('debugLogs').innerHTML = '';
+        }
+        
+        // Check extension status
+        async function checkExtensionStatus() {
+            const statusDiv = document.getElementById('extensionStatus');
+            try {
+                // Check if extension is installed
+                if (typeof chrome !== 'undefined' && chrome.runtime) {
+                    statusDiv.textContent = '✅ Extension đã được cài đặt';
+                    statusDiv.className = 'status success';
+                    log('Extension detected');
+                } else {
+                    statusDiv.textContent = '❌ Extension không được phát hiện';
+                    statusDiv.className = 'status error';
+                    log('Extension not detected', 'error');
+                }
+            } catch (error) {
+                statusDiv.textContent = '❌ Lỗi khi kiểm tra extension: ' + error.message;
+                statusDiv.className = 'status error';
+                log('Error checking extension: ' + error.message, 'error');
+            }
+        }
+        
+        // Simulate comment
+        function simulateComment() {
+            const commentBox = document.querySelector('[data-testid="comment-composer-text-input"]');
+            if (commentBox) {
+                commentBox.textContent = 'Test comment ' + new Date().toLocaleTimeString();
+                commentBox.dispatchEvent(new Event('input', { bubbles: true }));
+                log('Simulated comment input');
+            }
+        }
+        
+        function simulateEnter() {
+            const commentBox = document.querySelector('[data-testid="comment-composer-text-input"]');
+            if (commentBox) {
+                const enterEvent = new KeyboardEvent('keydown', {
+                    key: 'Enter',
+                    code: 'Enter',
+                    keyCode: 13,
+                    which: 13,
+                    bubbles: true,
+                    cancelable: true
+                });
+                commentBox.dispatchEvent(enterEvent);
+                log('Simulated Enter key');
+            }
+        }
+        
+        function simulateSubmit() {
+            const commentBox = document.querySelector('[data-testid="comment-composer-text-input"]');
+            if (commentBox) {
+                const submitEvent = new Event('submit', { bubbles: true });
+                commentBox.closest('form')?.dispatchEvent(submitEvent);
+                log('Simulated submit event');
+            }
+        }
+        
+        function simulatePost() {
+            const postBox = document.querySelector('[data-testid="post-composer-text-input"]');
+            if (postBox) {
+                postBox.textContent = 'Test post ' + new Date().toLocaleTimeString();
+                postBox.dispatchEvent(new Event('input', { bubbles: true }));
+                log('Simulated post input');
+            }
+        }
+        
+        // Test server connection
+        async function testServerConnection() {
+            const resultDiv = document.getElementById('manualTestResult');
+            try {
+                const response = await fetch('https://employee-tracker-2np8.onrender.com/health');
+                const data = await response.json();
+                resultDiv.innerHTML = `✅ Server OK: ${JSON.stringify(data, null, 2)}`;
+                log('Server connection test: OK');
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Server Error: ${error.message}`;
+                log('Server connection test: FAILED - ' + error.message, 'error');
+            }
+        }
+        
+        // Test tracking status
+        async function testTrackingStatus() {
+            const resultDiv = document.getElementById('manualTestResult');
+            try {
+                if (typeof chrome !== 'undefined' && chrome.runtime) {
+                    const response = await chrome.runtime.sendMessage({ action: 'getStatus' });
+                    resultDiv.innerHTML = `✅ Tracking Status: ${JSON.stringify(response, null, 2)}`;
+                    log('Tracking status test: OK');
+                } else {
+                    resultDiv.innerHTML = '❌ Extension not available';
+                    log('Tracking status test: Extension not available', 'error');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Tracking Error: ${error.message}`;
+                log('Tracking status test: FAILED - ' + error.message, 'error');
+            }
+        }
+        
+        // Auto check extension status on load
+        document.addEventListener('DOMContentLoaded', () => {
+            log('Debug page loaded');
+            setTimeout(checkExtensionStatus, 1000);
+        });
+        
+        // Listen for content script events
+        document.addEventListener('comment-detected', (event) => {
+            log('Comment detected: ' + event.detail.comment);
+        });
+        
+        document.addEventListener('post-detected', (event) => {
+            log('Post detected: ' + event.detail.post);
+        });
+    </script>
+</body>
+</html> 
