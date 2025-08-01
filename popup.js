@@ -94,7 +94,7 @@ function validateAllFormat() {
 // Validate nhân viên từ server
 async function validateEmployeeFromServer(employeeId, employeeName) {
   try {
-    const response = await fetch('http://localhost:3000/validate-employee', {
+    const response = await fetch('https://employee-tracker-2np8.onrender.com/validate-employee', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ employeeId, employeeName })
@@ -211,7 +211,7 @@ document.getElementById('startBtn').onclick = async function() {
     if (response.success) {
       // Gửi dữ liệu đến server
       const startTime = new Date().toISOString();
-      const serverResponse = await fetch('http://localhost:3000/activity', {
+      const serverResponse = await fetch('https://employee-tracker-2np8.onrender.com/activity', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 

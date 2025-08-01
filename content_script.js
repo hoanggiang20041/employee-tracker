@@ -44,7 +44,7 @@ async function sendComment(comment) {
       time: new Date().toISOString()
     });
     
-    const response = await fetch('http://localhost:3000/comment', {
+    const response = await fetch('https://employee-tracker-2np8.onrender.com/comment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

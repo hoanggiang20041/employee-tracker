@@ -1,7 +1,7 @@
 // Configuration file for Employee Tracker
 const CONFIG = {
   // Server configuration - Thay đổi IP này thành IP máy bạn
-  SERVER_URL: 'http://192.168.1.100:3000', // Thay đổi IP này!
+  SERVER_URL: 'https://employee-tracker-2np8.onrender.com',
   
   // Extension configuration
   EXTENSION_NAME: 'Employee Activity Tracker',
