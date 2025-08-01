@@ -7,14 +7,50 @@ let currentEmployeeId = null;
 let currentEmployeeName = null;
 let lastCommentTime = 0; // Tránh duplicate comment
 
+// Load tracking status từ localStorage khi script khởi động
+function loadTrackingStatusFromStorage() {
+  try {
+    const stored = localStorage.getItem('employee_tracker_status');
+    if (stored) {
+      const status = JSON.parse(stored);
+      isTracking = status.isTracking || false;
+      currentEmployeeId = status.employeeId || null;
+      currentEmployeeName = status.employeeName || null;
+      console.log('📥 Loaded tracking status from storage:', { isTracking, currentEmployeeId, currentEmployeeName });
+    }
+  } catch (error) {
+    console.error('❌ Lỗi khi load tracking status từ storage:', error);
+  }
+}
+
+// Save tracking status vào localStorage
+function saveTrackingStatusToStorage() {
+  try {
+    const status = { isTracking, currentEmployeeId, currentEmployeeName };
+    localStorage.setItem('employee_tracker_status', JSON.stringify(status));
+    console.log('💾 Saved tracking status to storage:', status);
+  } catch (error) {
+    console.error('❌ Lỗi khi save tracking status vào storage:', error);
+  }
+}
+
 // Kiểm tra trạng thái tracking từ background script
 async function checkTrackingStatus() {
   try {
+    // Kiểm tra xem extension context có hợp lệ không
+    if (!chrome.runtime || !chrome.runtime.id) {
+      console.log('⚠️ Extension context không hợp lệ, sử dụng cache');
+      return isTracking;
+    }
+    
     const response = await chrome.runtime.sendMessage({ action: 'getStatus' });
     isTracking = response.isTracking;
     currentEmployeeId = response.employeeId;
     currentEmployeeName = response.employeeName;
     console.log('📊 Tracking status:', { isTracking, currentEmployeeId, currentEmployeeName });
+    
+    // Save status vào localStorage
+    saveTrackingStatusToStorage();
     
     // Dispatch custom event để debug page có thể lắng nghe
     document.dispatchEvent(new CustomEvent('tracking-status-updated', {
@@ -24,7 +60,9 @@ async function checkTrackingStatus() {
     return isTracking;
   } catch (error) {
     console.error('❌ Lỗi khi kiểm tra trạng thái tracking:', error);
-    return false;
+    // Sử dụng cache nếu có lỗi
+    console.log('🔄 Sử dụng cache tracking status:', { isTracking, currentEmployeeId, currentEmployeeName });
+    return isTracking;
   }
 }
 
@@ -364,6 +402,9 @@ function setupClipboardObserver() {
     }
   });
 }
+
+// Load tracking status khi script khởi động
+loadTrackingStatusFromStorage();
 
 // Lắng nghe sự kiện nhấn phím
 document.addEventListener('keydown', handleEnterComment);
