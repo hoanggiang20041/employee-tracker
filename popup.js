@@ -446,31 +446,16 @@ async function saveTrackingStatus(status) {
 // Hàm mở form kháng cáo 151
 function openAppealForm() {
   try {
-    // Mở trang kháng cáo Facebook với mobile user agent
+    // Mở trang kháng cáo Facebook trực tiếp
     const appealUrl = 'https://www.facebook.com/help/contact/571927962827151';
     
-    // Tạo tab mới với mobile user agent
+    // Mở tab mới với URL trực tiếp
     chrome.tabs.create({ 
       url: appealUrl,
       active: true
-    }, (tab) => {
-      // Inject script để chuyển sang mobile view
-      chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: () => {
-          // Thay đổi user agent thành mobile
-          Object.defineProperty(navigator, 'userAgent', {
-            value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1',
-            writable: false
-          });
-          
-          // Reload trang để áp dụng mobile view
-          window.location.reload();
-        }
-      });
     });
     
-    showStatus('🚨 Đã mở form kháng cáo Facebook (Mobile)', 'info');
+    showStatus('🚨 Đã mở form kháng cáo Facebook', 'info');
     
     console.log('🚨 Opened appeal form for:', currentEmployeeId, currentEmployeeName);
   } catch (error) {

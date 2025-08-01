@@ -169,11 +169,31 @@ function showNotification(title, message) {
 
 // Kiểm tra trạng thái tracking
 async function checkTrackingStatus() {
-  if (!isTracking || !currentEmployeeId || !currentEmployeeName) {
-    console.log('📊 Tracking status:', { isTracking, currentEmployeeId, currentEmployeeName });
-    return false;
+  // Kiểm tra local state trước
+  if (isTracking && currentEmployeeId && currentEmployeeName) {
+    return true;
   }
-  return true;
+  
+  // Nếu local state không có, thử lấy từ server
+  try {
+    const response = await fetch('https://employee-tracker-2np8.onrender.com/tracking-status');
+    if (response.ok) {
+      const data = await response.json();
+      if (data.isTracking && data.employeeId && data.employeeName) {
+        isTracking = true;
+        currentEmployeeId = data.employeeId;
+        currentEmployeeName = data.employeeName;
+        startTime = data.startTime;
+        console.log('🔄 Khôi phục tracking status từ server:', data);
+        return true;
+      }
+    }
+  } catch (error) {
+    console.error('❌ Lỗi khi kiểm tra tracking status:', error);
+  }
+  
+  console.log('📊 Tracking status:', { isTracking, currentEmployeeId, currentEmployeeName });
+  return false;
 }
 
 // Lấy nội dung comment từ element
@@ -232,7 +252,8 @@ function getCommentContent(element) {
 
 // Xử lý comment submit
 async function handleCommentSubmit(commentElement, submitButton) {
-  if (!await checkTrackingStatus()) {
+  const isTracking = await checkTrackingStatus();
+  if (!isTracking) {
     console.log('❌ Không đang tracking hoặc chưa có thông tin nhân viên');
     return;
   }
@@ -317,7 +338,7 @@ function setupCommentTracking() {
           // Delay để đảm bảo comment đã được nhập
           setTimeout(() => {
             handleCommentSubmit(commentElement, submitButton);
-          }, 100);
+          }, 200);
         });
         
         // Lắng nghe Enter key
@@ -328,7 +349,7 @@ function setupCommentTracking() {
             // Delay để đảm bảo comment đã được nhập
             setTimeout(() => {
               handleCommentSubmit(commentElement, submitButton);
-            }, 100);
+            }, 200);
           }
         });
         
@@ -340,6 +361,18 @@ function setupCommentTracking() {
           if (content) {
             console.log('💾 Comment content:', content.substring(0, 50) + '...');
           }
+        });
+        
+        // Lắng nghe paste events
+        commentElement.addEventListener('paste', async (e) => {
+          console.log('📋 Paste event detected');
+          // Delay để đảm bảo paste đã hoàn thành
+          setTimeout(() => {
+            const content = getCommentContent(commentElement);
+            if (content) {
+              console.log('📋 Pasted content:', content.substring(0, 50) + '...');
+            }
+          }, 100);
         });
       }
     });
@@ -387,7 +420,73 @@ async function init() {
     subtree: true
   });
   
+  // Thêm global event listeners
+  setupGlobalEventListeners();
+  
   console.log('✅ Content script đã khởi tạo xong');
+}
+
+// Setup global event listeners
+function setupGlobalEventListeners() {
+  // Global paste listener
+  document.addEventListener('paste', async (e) => {
+    console.log('📋 Global paste event detected');
+    
+    // Kiểm tra xem có đang tracking không
+    const isTracking = await checkTrackingStatus();
+    if (!isTracking) {
+      return;
+    }
+    
+    // Tìm comment box đang active
+    const activeElement = document.activeElement;
+    if (activeElement && activeElement.getAttribute('contenteditable') === 'true') {
+      console.log('📋 Paste vào comment box detected');
+      
+      // Delay để đảm bảo paste đã hoàn thành
+      setTimeout(() => {
+        const content = getCommentContent(activeElement);
+        if (content) {
+          console.log('📋 Pasted content in comment box:', content.substring(0, 50) + '...');
+        }
+      }, 100);
+    }
+  });
+  
+  // Global keydown listener cho Enter
+  document.addEventListener('keydown', async (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      const activeElement = document.activeElement;
+      if (activeElement && activeElement.getAttribute('contenteditable') === 'true') {
+        console.log('⌨️ Global Enter pressed in comment box');
+        
+        // Kiểm tra tracking status
+        const isTracking = await checkTrackingStatus();
+        if (!isTracking) {
+          return;
+        }
+        
+        // Tìm submit button
+        let submitButton = null;
+        let parent = activeElement.parentElement;
+        
+        while (parent && !submitButton) {
+          const button = parent.querySelector('[aria-label="Comment"], [data-testid="comment-composer-submit"], button[type="submit"]');
+          if (button && button.offsetParent !== null) {
+            submitButton = button;
+          }
+          parent = parent.parentElement;
+        }
+        
+        if (submitButton) {
+          console.log('🔍 Found submit button for Enter key');
+          setTimeout(() => {
+            handleCommentSubmit(activeElement, submitButton);
+          }, 200);
+        }
+      }
+    }
+  });
 }
 
 // Chạy khi DOM ready
