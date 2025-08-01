@@ -55,8 +55,20 @@ function validateEmployee(employeeId, employeeName) {
   return employee !== undefined;
 }
 
-// API Routes cho quản lý nhân viên
-app.post('/employees', (req, res) => {
+// Middleware để kiểm tra admin access
+function requireAdmin(req, res, next) {
+  const adminToken = req.headers['admin-token'] || req.query.admin_token;
+  
+  // Simple admin check (trong thực tế nên dùng JWT)
+  if (adminToken === 'admin123') {
+    next();
+  } else {
+    res.status(401).json({ error: 'Unauthorized - Admin access required' });
+  }
+}
+
+// API Routes cho quản lý nhân viên (cần admin)
+app.post('/employees', requireAdmin, (req, res) => {
   const { employeeId, employeeName, position, department } = req.body;
   
   if (!employeeId || !employeeName) {
@@ -86,7 +98,7 @@ app.post('/employees', (req, res) => {
   res.json({ success: true, employee });
 });
 
-app.get('/employees', (req, res) => {
+app.get('/employees', requireAdmin, (req, res) => {
   const { active } = req.query;
   let filteredEmployees = employees;
   
@@ -97,7 +109,7 @@ app.get('/employees', (req, res) => {
   res.json(filteredEmployees);
 });
 
-app.put('/employees/:employeeId', (req, res) => {
+app.put('/employees/:employeeId', requireAdmin, (req, res) => {
   const { employeeId } = req.params;
   const { employeeName, position, department, isActive } = req.body;
   
@@ -120,7 +132,7 @@ app.put('/employees/:employeeId', (req, res) => {
   res.json({ success: true, employee: employees[employeeIndex] });
 });
 
-app.delete('/employees/:employeeId', (req, res) => {
+app.delete('/employees/:employeeId', requireAdmin, (req, res) => {
   const { employeeId } = req.params;
   
   const employeeIndex = employees.findIndex(emp => emp.employeeId === employeeId);
@@ -217,7 +229,7 @@ app.post('/comment', (req, res) => {
   res.json({ success: true, id: commentData.id });
 });
 
-app.get('/data', (req, res) => {
+app.get('/data', requireAdmin, (req, res) => {
   const { employeeId, startDate, endDate } = req.query;
   
   let filteredActivities = activities;
@@ -255,7 +267,7 @@ app.get('/data', (req, res) => {
   });
 });
 
-app.get('/employees/stats', (req, res) => {
+app.get('/employees/stats', requireAdmin, (req, res) => {
   const employeeStats = employees.map(employee => {
     const employeeActivities = activities.filter(a => a.employeeId === employee.employeeId);
     const employeeComments = comments.filter(c => c.employeeId === employee.employeeId);
@@ -274,7 +286,7 @@ app.get('/employees/stats', (req, res) => {
   res.json(employeeStats);
 });
 
-app.delete('/data', (req, res) => {
+app.delete('/data', requireAdmin, (req, res) => {
   const { type, id } = req.query;
   
   if (type === 'activities') {

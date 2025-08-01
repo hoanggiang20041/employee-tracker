@@ -400,6 +400,53 @@
     
     <script src="config.js"></script>
     <script>
+        // Check admin authentication
+        function checkAdminAuth() {
+            const isLoggedIn = sessionStorage.getItem('admin_logged_in');
+            const adminUsername = sessionStorage.getItem('admin_username');
+            
+            if (isLoggedIn !== 'true' || !adminUsername) {
+                alert('🔐 Vui lòng đăng nhập để truy cập trang Admin!');
+                window.location.href = '/admin-login.html';
+                return false;
+            }
+            
+            // Show admin info
+            const adminInfo = document.createElement('div');
+            adminInfo.style.cssText = `
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                background: rgba(0, 0, 0, 0.8);
+                color: white;
+                padding: 10px;
+                border-radius: 5px;
+                font-size: 12px;
+                z-index: 1000;
+            `;
+            adminInfo.innerHTML = `
+                👤 Admin: ${adminUsername}
+                <button onclick="logout()" style="margin-left: 10px; padding: 2px 8px; background: #f44336; border: none; color: white; border-radius: 3px; cursor: pointer;">🚪 Logout</button>
+            `;
+            document.body.appendChild(adminInfo);
+            
+            return true;
+        }
+        
+        // Logout function
+        function logout() {
+            sessionStorage.removeItem('admin_logged_in');
+            sessionStorage.removeItem('admin_username');
+            alert('👋 Đã đăng xuất thành công!');
+            window.location.href = '/admin-login.html';
+        }
+        
+        // Check auth on page load
+        if (!checkAdminAuth()) {
+            // Stop execution if not authenticated
+            throw new Error('Unauthorized access');
+        }
+        
         const SERVER_URL = CONFIG.SERVER_URL;
         let currentEditingEmployee = null;
         
@@ -419,7 +466,7 @@
         
         async function loadEmployees() {
             try {
-                const response = await fetch(`${SERVER_URL}/employees`);
+                const response = await fetch(`${SERVER_URL}/employees?admin_token=admin123`);
                 const employees = await response.json();
                 
                 const employeesList = document.getElementById('employeesList');
@@ -454,7 +501,7 @@
         
         async function loadEmployeeStats() {
             try {
-                const response = await fetch(`${SERVER_URL}/employees/stats`);
+                const response = await fetch(`${SERVER_URL}/employees/stats?admin_token=admin123`);
                 const stats = await response.json();
                 
                 const statsList = document.getElementById('employeeStatsList');
@@ -482,7 +529,7 @@
         
         async function loadComments() {
             try {
-                const response = await fetch(`${SERVER_URL}/data`);
+                const response = await fetch(`${SERVER_URL}/data?admin_token=admin123`);
                 const data = await response.json();
                 
                 const commentsList = document.getElementById('commentsList');
@@ -511,8 +558,8 @@
         async function updateStats() {
             try {
                 const [employeesResponse, dataResponse] = await Promise.all([
-                    fetch(`${SERVER_URL}/employees`),
-                    fetch(`${SERVER_URL}/data`)
+                    fetch(`${SERVER_URL}/employees?admin_token=admin123`),
+                    fetch(`${SERVER_URL}/data?admin_token=admin123`)
                 ]);
                 
                 const employees = await employeesResponse.json();
@@ -537,7 +584,7 @@
         
         function editEmployee(employeeId) {
             // Tìm thông tin nhân viên và hiển thị modal
-            fetch(`${SERVER_URL}/employees`)
+            fetch(`${SERVER_URL}/employees?admin_token=admin123`)
                 .then(response => response.json())
                 .then(employees => {
                     const employee = employees.find(emp => emp.employeeId === employeeId);
@@ -559,7 +606,7 @@
             if (!confirm(`Bạn có chắc muốn xóa nhân viên ${employeeId}?`)) return;
             
             try {
-                const response = await fetch(`${SERVER_URL}/employees/${employeeId}`, { method: 'DELETE' });
+                const response = await fetch(`${SERVER_URL}/employees/${employeeId}?admin_token=admin123`, { method: 'DELETE' });
                 if (response.ok) {
                     showSuccess('Đã xóa nhân viên thành công');
                     await loadAllData();
@@ -591,14 +638,14 @@
                 let response;
                 if (currentEditingEmployee) {
                     // Cập nhật nhân viên
-                    response = await fetch(`${SERVER_URL}/employees/${formData.employeeId}`, {
+                    response = await fetch(`${SERVER_URL}/employees/${formData.employeeId}?admin_token=admin123`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(formData)
                     });
                 } else {
                     // Thêm nhân viên mới
-                    response = await fetch(`${SERVER_URL}/employees`, {
+                    response = await fetch(`${SERVER_URL}/employees?admin_token=admin123`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(formData)
@@ -622,7 +669,7 @@
             if (!confirm('Bạn có chắc muốn xóa tất cả dữ liệu?')) return;
             
             try {
-                await fetch(`${SERVER_URL}/data`, { method: 'DELETE' });
+                await fetch(`${SERVER_URL}/data?admin_token=admin123`, { method: 'DELETE' });
                 showSuccess('Đã xóa tất cả dữ liệu');
                 await loadAllData();
             } catch (error) {
@@ -634,7 +681,7 @@
             if (!confirm('Bạn có chắc muốn xóa tất cả comment?')) return;
             
             try {
-                await fetch(`${SERVER_URL}/data?type=comments`, { method: 'DELETE' });
+                await fetch(`${SERVER_URL}/data?type=comments&admin_token=admin123`, { method: 'DELETE' });
                 showSuccess('Đã xóa tất cả comment');
                 await loadAllData();
             } catch (error) {
@@ -644,7 +691,7 @@
         
         async function exportEmployees() {
             try {
-                const response = await fetch(`${SERVER_URL}/employees`);
+                const response = await fetch(`${SERVER_URL}/employees?admin_token=admin123`);
                 const employees = await response.json();
                 
                 const blob = new Blob([JSON.stringify(employees, null, 2)], { type: 'application/json' });
