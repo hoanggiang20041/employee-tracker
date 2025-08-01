@@ -4,9 +4,21 @@ let timerInterval = null;
 
 // Khởi tạo popup
 document.addEventListener('DOMContentLoaded', async () => {
+  console.log('🚀 Popup đã load');
+  
+  // Load thông tin nhân viên đã lưu
   await loadSavedEmployeeInfo();
-  await updateStatus();
-  setupValidation();
+  
+  // Load trạng thái tracking
+  await loadTrackingStatus();
+  
+  // Cập nhật UI
+  updateUI();
+  
+  // Bắt đầu timer nếu đang tracking
+  if (isTracking) {
+    startTimer();
+  }
 });
 
 // Load thông tin nhân viên đã lưu
@@ -340,5 +352,42 @@ async function logout() {
   } catch (error) {
     console.error('❌ Lỗi khi đăng xuất:', error);
     showStatus('❌ Lỗi khi đăng xuất', 'error');
+  }
+}
+
+// Load trạng thái tracking
+async function loadTrackingStatus() {
+  try {
+    const response = await fetch('https://employee-tracker-2np8.onrender.com/tracking-status');
+    if (response.ok) {
+      const data = await response.json();
+      if (data.isTracking) {
+        isTracking = true;
+        startTime = data.startTime;
+        updateUI();
+        console.log('📊 Loaded tracking status from server:', data);
+      }
+    }
+  } catch (error) {
+    console.error('❌ Lỗi khi load tracking status:', error);
+  }
+}
+
+// Lưu trạng thái tracking
+async function saveTrackingStatus(status) {
+  try {
+    const response = await fetch('https://employee-tracker-2np8.onrender.com/tracking-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(status)
+    });
+    
+    if (response.ok) {
+      console.log('💾 Saved tracking status to server');
+    } else {
+      console.error('❌ Lỗi khi lưu tracking status');
+    }
+  } catch (error) {
+    console.error('❌ Lỗi khi lưu tracking status:', error);
   }
 }

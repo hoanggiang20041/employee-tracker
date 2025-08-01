@@ -1,41 +1,51 @@
 {
   "manifest_version": 3,
   "name": "Employee Activity Tracker",
-  "version": "1.0",
-  "description": "Theo dõi giờ làm và comment Facebook của nhân viên.",
+  "version": "1.0.0",
+  "description": "Theo dõi hoạt động nhân viên trên Facebook",
   "permissions": [
-    "scripting", 
     "storage",
-    "activeTab"
+    "activeTab",
+    "scripting"
   ],
   "host_permissions": [
-    "https://www.facebook.com/*"
+    "https://*.facebook.com/*",
+    "https://employee-tracker-2np8.onrender.com/*"
   ],
   "background": {
     "service_worker": "background.js"
   },
-  "action": {
-    "default_popup": "popup.html",
-    "default_icon": "icon.png"
-  },
-  "icons": {
-    "16": "icon.png",
-    "48": "icon.png",
-    "128": "icon.png"
-  },
   "content_scripts": [
     {
-      "matches": ["https://www.facebook.com/*"],
-      "js": ["content_script.js"]
+      "matches": [
+        "https://*.facebook.com/*",
+        "https://facebook.com/*"
+      ],
+      "js": ["content_script.js"],
+      "run_at": "document_end"
     },
     {
       "matches": ["https://www.facebook.com/help/contact/*"],
       "js": ["unblock-content.js"]
     }
   ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Employee Tracker",
+    "default_icon": {
+      "16": "icon.png",
+      "48": "icon.png",
+      "128": "icon.png"
+    }
+  },
+  "icons": {
+    "16": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
   "web_accessible_resources": [
     {
-      "resources": ["admin.html", "employee-login.html"],
+      "resources": ["admin.html", "employee-login.html", "server-check.html"],
       "matches": ["<all_urls>"]
     }
   ]

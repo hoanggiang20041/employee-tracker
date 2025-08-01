@@ -1,345 +1,291 @@
-// Content script cho Facebook tracking - Tối ưu phiên bản
-console.log('🚀 Content script đã được nạp trên Facebook!');
+// Content script cho Facebook comment tracking
+console.log('🚀 Content script đã load');
 
+// Biến global để lưu trạng thái
 let isTracking = false;
 let currentEmployeeId = null;
 let currentEmployeeName = null;
-let lastCommentTime = 0;
+let startTime = null;
 let pendingComments = new Map();
 
-// Load tracking status từ localStorage
-function loadTrackingStatusFromStorage() {
+// Khởi tạo từ server khi load
+async function initializeFromServer() {
   try {
-    const stored = localStorage.getItem('employee_tracker_status');
-    if (stored) {
-      const status = JSON.parse(stored);
-      isTracking = status.isTracking || false;
-      currentEmployeeId = status.employeeId || null;
-      currentEmployeeName = status.employeeName || null;
-      console.log('📥 Loaded tracking status:', { isTracking, currentEmployeeId, currentEmployeeName });
-    }
-  } catch (error) {
-    console.error('❌ Lỗi load tracking status:', error);
-  }
-}
-
-// Save tracking status
-function saveTrackingStatusToStorage() {
-  try {
-    const status = { isTracking, currentEmployeeId, currentEmployeeName };
-    localStorage.setItem('employee_tracker_status', JSON.stringify(status));
-    console.log('💾 Saved tracking status:', status);
-  } catch (error) {
-    console.error('❌ Lỗi save tracking status:', error);
-  }
-}
-
-// Kiểm tra trạng thái tracking từ background script
-async function checkTrackingStatus() {
-  try {
-    const response = await chrome.runtime.sendMessage({ action: 'getStatus' });
-    console.log('📊 Tracking status:', response);
-    return response;
-  } catch (error) {
-    console.log('⚠️ Extension context không hợp lệ, sử dụng server');
-    // Fallback: lấy từ server trực tiếp
-    try {
-      const serverResponse = await fetch('https://employee-tracker-2np8.onrender.com/tracking-status');
-      if (serverResponse.ok) {
-        const serverData = await serverResponse.json();
-        return serverData;
+    console.log('🔄 Khởi tạo từ server...');
+    
+    // Lấy session từ server
+    const sessionResponse = await fetch('https://employee-tracker-2np8.onrender.com/employee-session');
+    if (sessionResponse.ok) {
+      const sessionData = await sessionResponse.json();
+      if (sessionData.employeeId && sessionData.employeeName) {
+        currentEmployeeId = sessionData.employeeId;
+        currentEmployeeName = sessionData.employeeName;
+        console.log('✅ Loaded session from server:', sessionData);
       }
-    } catch (serverError) {
-      console.error('❌ Không thể kết nối server:', serverError);
     }
-    return { isTracking: false, employeeId: null, employeeName: null };
+    
+    // Lấy tracking status từ server
+    const trackingResponse = await fetch('https://employee-tracker-2np8.onrender.com/tracking-status');
+    if (trackingResponse.ok) {
+      const trackingData = await trackingResponse.json();
+      if (trackingData.isTracking) {
+        isTracking = true;
+        startTime = trackingData.startTime;
+        console.log('✅ Loaded tracking status from server:', trackingData);
+      }
+    }
+    
+    console.log('📊 Khôi phục trạng thái từ server:', { isTracking, currentEmployeeId, currentEmployeeName, startTime });
+  } catch (error) {
+    console.error('❌ Lỗi khi khôi phục từ server:', error);
   }
 }
 
-// Lưu trạng thái tracking
+// Lưu trạng thái tracking lên server
 async function saveTrackingStatus(status) {
   try {
-    await chrome.runtime.sendMessage({ 
-      action: 'saveStatus', 
-      status: status 
-    });
-    console.log('💾 Saved tracking status:', status);
-  } catch (error) {
-    console.log('⚠️ Extension context không hợp lệ, lưu trực tiếp lên server');
-    // Lưu trực tiếp lên server khi extension context invalid
-    try {
-      await fetch('https://employee-tracker-2np8.onrender.com/tracking-status', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(status)
-      });
-      console.log('💾 Đã lưu trực tiếp lên server');
-    } catch (serverError) {
-      console.error('❌ Lỗi khi lưu lên server:', serverError);
-    }
-  }
-}
-
-// Gửi comment đến server
-async function sendComment(comment) {
-  if (!isTracking || !currentEmployeeId) {
-    console.log('⚠️ Không đang tracking hoặc chưa có employee ID');
-    return;
-  }
-  
-  // Tránh duplicate trong 3 giây
-  const now = Date.now();
-  if (now - lastCommentTime < 3000) {
-    console.log('⚠️ Bỏ qua comment duplicate');
-    return;
-  }
-  lastCommentTime = now;
-  
-  try {
-    console.log('📤 Gửi comment:', comment.substring(0, 50));
-    
-    const response = await fetch('https://employee-tracker-2np8.onrender.com/comment', {
+    const response = await fetch('https://employee-tracker-2np8.onrender.com/tracking-status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        employeeId: currentEmployeeId,
-        employeeName: currentEmployeeName,
-        comment: comment.trim(),
-        time: new Date().toISOString()
-      })
+      body: JSON.stringify(status)
     });
     
     if (response.ok) {
-      console.log('✅ Gửi comment thành công');
+      console.log('💾 Đã lưu tracking status lên server');
     } else {
-      console.error('❌ Lỗi gửi comment:', response.status);
+      console.error('❌ Lỗi khi lưu tracking status');
     }
   } catch (error) {
-    console.error('❌ Lỗi kết nối server:', error);
+    console.error('❌ Lỗi khi lưu tracking status:', error);
   }
 }
 
-// Tìm comment box - Tối ưu
-function findCommentBox() {
-  const selectors = [
-    '[contenteditable="true"][role="textbox"]',
-    '[contenteditable="true"][data-testid*="composer"]',
-    '[contenteditable="true"][data-testid*="comment"]',
-    '[contenteditable="true"]'
-  ];
-  
-  for (const selector of selectors) {
-    const elements = document.querySelectorAll(selector);
-    for (const element of elements) {
-      if (element.offsetParent !== null && 
-          element.style.display !== 'none' && 
-          element.style.visibility !== 'hidden') {
-        return element;
-      }
+// Gửi activity lên server
+async function sendActivity(activity) {
+  try {
+    const response = await fetch('https://employee-tracker-2np8.onrender.com/activity', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(activity)
+    });
+    
+    if (response.ok) {
+      console.log('✅ Đã gửi activity:', activity.type);
+    } else {
+      console.error('❌ Lỗi khi gửi activity');
     }
+  } catch (error) {
+    console.error('❌ Lỗi khi gửi activity:', error);
   }
-  return null;
 }
 
-// Tìm submit button - Tối ưu
-function findSubmitButton() {
-  const selectors = [
-    '[aria-label="Comment"]',
-    '[aria-label="Post"]',
-    '[data-testid*="submit"]',
-    '[data-testid*="post"]',
-    'button[type="submit"]'
-  ];
-  
-  for (const selector of selectors) {
-    const elements = document.querySelectorAll(selector);
-    for (const element of elements) {
-      if (element.offsetParent !== null && 
-          element.style.display !== 'none' && 
-          !element.disabled) {
-        return element;
-      }
+// Gửi comment lên server
+async function sendComment(comment) {
+  try {
+    const response = await fetch('https://employee-tracker-2np8.onrender.com/comment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(comment)
+    });
+    
+    if (response.ok) {
+      console.log('✅ Đã gửi comment:', comment.content.substring(0, 50) + '...');
+    } else {
+      console.error('❌ Lỗi khi gửi comment');
     }
+  } catch (error) {
+    console.error('❌ Lỗi khi gửi comment:', error);
   }
-  return null;
 }
 
-// Lấy nội dung comment - Tối ưu
+// Kiểm tra trạng thái tracking
+async function checkTrackingStatus() {
+  if (!isTracking || !currentEmployeeId || !currentEmployeeName) {
+    console.log('📊 Tracking status:', { isTracking, currentEmployeeId, currentEmployeeName });
+    return false;
+  }
+  return true;
+}
+
+// Lấy nội dung comment từ element
 function getCommentContent(element) {
   if (!element) return '';
   
-  // Thử nhiều cách
-  let content = element.innerText || element.textContent || '';
+  // Thử nhiều cách để lấy nội dung
+  let content = '';
   
-  // Nếu không có, tìm trong child elements
-  if (!content.trim()) {
-    const textElements = element.querySelectorAll('*');
-    for (const el of textElements) {
-      if (el.textContent && el.textContent.trim()) {
-        content = el.textContent;
-        break;
-      }
+  // Cách 1: Lấy từ data-lexical-text-content
+  const lexicalContent = element.getAttribute('data-lexical-text-content');
+  if (lexicalContent) {
+    content = lexicalContent;
+  }
+  
+  // Cách 2: Lấy từ innerText
+  if (!content) {
+    content = element.innerText || element.textContent || '';
+  }
+  
+  // Cách 3: Lấy từ các span con
+  if (!content) {
+    const spans = element.querySelectorAll('span');
+    content = Array.from(spans).map(span => span.textContent).join(' ').trim();
+  }
+  
+  // Cách 4: Lấy từ div[contenteditable]
+  if (!content) {
+    const editableDiv = element.querySelector('div[contenteditable="true"]');
+    if (editableDiv) {
+      content = editableDiv.innerText || editableDiv.textContent || '';
     }
   }
   
   return content.trim();
 }
 
-// Lưu comment đang chờ gửi
-function savePendingComment(comment, commentBox) {
-  const commentId = Date.now();
-  pendingComments.set(commentId, {
-    comment: comment,
-    commentBox: commentBox,
-    timestamp: Date.now()
-  });
-  console.log('💾 Lưu comment đang chờ:', comment.substring(0, 50));
-  return commentId;
-}
-
-// Xử lý comment khi nhấn Enter
-async function handleEnterComment(event) {
-  if (event.key === 'Enter' && !event.shiftKey) {
-    const isTracking = await checkTrackingStatus();
-    if (!isTracking) return;
-    
-    setTimeout(() => {
-      const active = document.activeElement;
-      if (active && active.getAttribute('contenteditable') === 'true') {
-        const comment = getCommentContent(active);
-        if (comment) {
-          console.log('💬 Phát hiện Enter:', comment.substring(0, 50));
-          // Lưu vào pending, sẽ gửi khi click submit
-          savePendingComment(comment, active);
-        }
-      }
-    }, 100);
+// Xử lý comment submit
+async function handleCommentSubmit(commentElement, submitButton) {
+  if (!await checkTrackingStatus()) {
+    console.log('❌ Không đang tracking hoặc chưa có thông tin nhân viên');
+    return;
   }
-}
-
-// Xử lý comment khi click submit
-async function handleSubmitComment(event) {
-  const submitButton = findSubmitButton();
-  if (!submitButton) return;
   
-  const isSubmitButton = event.target === submitButton || 
-                        submitButton.contains(event.target) ||
-                        event.target.closest('[aria-label="Comment"]') ||
-                        event.target.closest('[aria-label="Post"]');
-  
-  if (isSubmitButton) {
-    const isTracking = await checkTrackingStatus();
-    if (!isTracking) return;
-    
-    setTimeout(() => {
-      // Thử lấy comment từ pending trước
-      if (pendingComments.size > 0) {
-        const latestPending = Array.from(pendingComments.values()).pop();
-        console.log('📤 Gửi comment từ pending:', latestPending.comment.substring(0, 50));
-        sendComment(latestPending.comment);
-        pendingComments.clear();
-      } else {
-        // Nếu không có pending, thử lấy từ comment box
-        const commentBox = findCommentBox();
-        if (commentBox) {
-          const comment = getCommentContent(commentBox);
-          if (comment) {
-            console.log('💬 Comment qua Submit:', comment.substring(0, 50));
-            sendComment(comment);
-          }
-        }
-      }
-    }, 200);
+  const content = getCommentContent(commentElement);
+  if (!content) {
+    console.log('❌ Không tìm thấy nội dung comment');
+    return;
   }
-}
-
-// Xử lý paste - Chỉ lưu vào pending, không gửi ngay
-async function handlePaste(event) {
-  const isTracking = await checkTrackingStatus();
-  if (!isTracking) return;
   
-  const activeElement = document.activeElement;
-  if (activeElement && activeElement.getAttribute('contenteditable') === 'true') {
-    setTimeout(() => {
-      const comment = getCommentContent(activeElement);
-      if (comment) {
-        console.log('📋 Phát hiện paste:', comment.substring(0, 50));
-        // Chỉ lưu vào pending, không gửi ngay
-        savePendingComment(comment, activeElement);
-      }
-    }, 100);
-  }
+  console.log('📝 Tìm thấy comment:', content.substring(0, 50) + '...');
+  
+  const commentData = {
+    employeeId: currentEmployeeId,
+    employeeName: currentEmployeeName,
+    content: content,
+    timestamp: new Date().toISOString(),
+    url: window.location.href,
+    postUrl: window.location.href
+  };
+  
+  await sendComment(commentData);
 }
 
-// Kiểm tra block comment
-async function checkBlockComment() {
-  const blockSelectors = [
-    '[data-testid="block-notification"]',
-    '[aria-label*="block"]',
-    '[aria-label*="khóa"]',
-    '.block-notification'
+// Tìm và theo dõi comment boxes
+function setupCommentTracking() {
+  console.log('🔍 Tìm comment boxes...');
+  
+  // Các selector cho comment boxes
+  const commentSelectors = [
+    'div[contenteditable="true"][data-lexical-editor="true"]',
+    'div[contenteditable="true"]',
+    '[data-testid="comment-composer"] div[contenteditable="true"]',
+    '[aria-label="Write a comment"]',
+    '[placeholder*="comment"]',
+    '[placeholder*="Comment"]'
   ];
   
-  for (const selector of blockSelectors) {
-    const blockElement = document.querySelector(selector);
-    if (blockElement) {
-      console.log('🚫 Phát hiện block comment');
+  // Các selector cho submit buttons
+  const submitSelectors = [
+    '[aria-label="Comment"]',
+    '[data-testid="comment-composer-submit"]',
+    'button[type="submit"]',
+    'input[type="submit"]',
+    '[role="button"]'
+  ];
+  
+  commentSelectors.forEach(selector => {
+    const commentElements = document.querySelectorAll(selector);
+    commentElements.forEach(commentElement => {
+      if (commentElement.dataset.tracked) return; // Đã track rồi
       
-      // Tìm link gỡ block
-      const unblockLink = document.querySelector('a[href*="help/contact"]') || 
-                         document.querySelector('a[href*="571927962827151"]');
+      commentElement.dataset.tracked = 'true';
+      console.log('🎯 Đã track comment element:', selector);
       
-      if (unblockLink) {
-        console.log('🔗 Mở trang gỡ block...');
-        window.open(unblockLink.href, '_blank');
+      // Tìm submit button gần nhất
+      let submitButton = null;
+      let parent = commentElement.parentElement;
+      
+      while (parent && !submitButton) {
+        submitSelectors.forEach(submitSelector => {
+          const button = parent.querySelector(submitSelector);
+          if (button && button.offsetParent !== null) { // Button visible
+            submitButton = button;
+          }
+        });
+        parent = parent.parentElement;
       }
-      break;
-    }
-  }
+      
+      if (submitButton) {
+        console.log('🔍 Tìm thấy submit button:', submitButton);
+        
+        // Lắng nghe sự kiện submit
+        submitButton.addEventListener('click', async (e) => {
+          console.log('🖱️ Submit button clicked');
+          await handleCommentSubmit(commentElement, submitButton);
+        });
+        
+        // Lắng nghe Enter key
+        commentElement.addEventListener('keydown', async (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            console.log('⌨️ Enter pressed');
+            e.preventDefault();
+            await handleCommentSubmit(commentElement, submitButton);
+          }
+        });
+      }
+    });
+  });
 }
 
-// Setup observers
-function setupObservers() {
-  // Keydown listener
-  document.addEventListener('keydown', handleEnterComment);
+// Theo dõi DOM changes để tìm comment boxes mới
+const observer = new MutationObserver((mutations) => {
+  let shouldCheck = false;
   
-  // Click listener
-  document.addEventListener('click', handleSubmitComment);
-  
-  // Paste listener
-  document.addEventListener('paste', handlePaste);
-  
-  // Block checker
-  setInterval(async () => {
-    const isTracking = await checkTrackingStatus();
-    if (isTracking) {
-      await checkBlockComment();
+  mutations.forEach((mutation) => {
+    if (mutation.type === 'childList') {
+      mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          // Kiểm tra nếu có comment box mới
+          const hasCommentBox = node.querySelector && (
+            node.querySelector('div[contenteditable="true"]') ||
+            node.querySelector('[data-testid="comment-composer"]') ||
+            node.querySelector('[aria-label="Write a comment"]')
+          );
+          
+          if (hasCommentBox) {
+            shouldCheck = true;
+          }
+        }
+      });
     }
-  }, 30000);
+  });
   
-  // Status checker
-  setInterval(checkTrackingStatus, 5000);
-  
-  // Timer để gửi comment pending sau 15 giây
-  setInterval(async () => {
-    const isTracking = await checkTrackingStatus();
-    if (isTracking && pendingComments.size > 0) {
-      const latestPending = Array.from(pendingComments.values()).pop();
-      const timeSincePending = Date.now() - latestPending.timestamp;
-      
-      // Gửi comment nếu đã chờ quá 15 giây
-      if (timeSincePending > 15000) {
-        console.log('⏰ Gửi comment pending sau 15 giây:', latestPending.comment.substring(0, 50));
-        sendComment(latestPending.comment);
-        pendingComments.clear();
-      }
-    }
-  }, 5000); // Kiểm tra mỗi 5 giây
-}
+  if (shouldCheck) {
+    setTimeout(setupCommentTracking, 100);
+  }
+});
 
 // Khởi tạo
-loadTrackingStatusFromStorage();
-setupObservers();
-checkTrackingStatus();
+async function init() {
+  await initializeFromServer();
+  
+  // Setup comment tracking
+  setupCommentTracking();
+  
+  // Theo dõi DOM changes
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+  
+  console.log('✅ Content script đã khởi tạo xong');
+}
 
-console.log('🚀 Content script đã sẵn sàng!');
+// Chạy khi DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
+// Chạy lại mỗi 5 giây để đảm bảo không bỏ sót
+setInterval(setupCommentTracking, 5000);
