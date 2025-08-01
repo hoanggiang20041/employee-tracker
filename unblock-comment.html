@@ -6,391 +6,436 @@
     <title>Gỡ Block Comment Facebook</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            min-height: 100vh;
-        }
-        .container {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 30px;
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
-        }
-        .section {
-            background: rgba(255, 255, 255, 0.2);
+            margin: 0;
             padding: 20px;
-            margin: 20px 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+        
+        .step {
+            background: #f8f9fa;
             border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007bff;
         }
-        button {
-            background: #4CAF50;
-            color: white;
+        
+        .step h3 {
+            color: #007bff;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        
+        .step ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .step li {
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 24px;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            margin: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
         }
-        button:hover {
-            background: #45a049;
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
         }
-        button.danger {
-            background: #f44336;
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.4);
         }
-        button.danger:hover {
-            background: #da190b;
+        
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+            color: white;
         }
-        .status {
-            padding: 10px;
-            border-radius: 5px;
-            margin: 10px 0;
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40,167,69,0.4);
         }
-        .status.success {
-            background: rgba(0, 255, 0, 0.3);
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
         }
-        .status.error {
-            background: rgba(255, 0, 0, 0.3);
+        
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255,193,7,0.4);
         }
-        .status.warning {
-            background: rgba(255, 165, 0, 0.3);
+        
+        .form-group {
+            margin-bottom: 20px;
         }
-        .log {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 15px;
-            border-radius: 5px;
-            margin: 10px 0;
-            max-height: 300px;
-            overflow-y: auto;
-            font-family: monospace;
-            font-size: 12px;
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
         }
+        
         textarea {
             width: 100%;
-            height: 100px;
-            padding: 10px;
-            border-radius: 5px;
-            border: none;
-            margin: 10px 0;
-            font-family: Arial, sans-serif;
+            min-height: 120px;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.1);
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-weight: 600;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .link-box {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .link-box a {
+            color: #1976d2;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .link-box a:hover {
+            text-decoration: underline;
+        }
+        
+        .auto-complete-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .auto-complete-section h4 {
+            color: #856404;
+            margin-top: 0;
+        }
+        
+        .tips {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .tips h4 {
+            color: #495057;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        
+        .tips ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .tips li {
+            margin-bottom: 8px;
+            color: #6c757d;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🚫 Gỡ Block Comment Facebook</h1>
+        <h1>🔓 Gỡ Block Comment Facebook</h1>
         
-        <div class="section">
-            <h3>📋 Hướng dẫn gỡ block</h3>
-            <p>Nếu Facebook block comment của bạn, hãy làm theo các bước sau:</p>
+        <div class="step">
+            <h3>📋 Hướng dẫn thủ công</h3>
             <ol>
-                <li>Click "Mở trang gỡ block" bên dưới</li>
-                <li>Điền thông tin vào form</li>
-                <li>Click "Tự động điền form"</li>
-                <li>Click "Gửi yêu cầu"</li>
+                <li>Mở link Facebook Help bên dưới</li>
+                <li>Đăng nhập vào tài khoản Facebook của bạn</li>
+                <li>Điền thông tin yêu cầu gỡ block</li>
+                <li>Gửi yêu cầu và chờ phản hồi</li>
             </ol>
         </div>
         
-        <div class="section">
-            <h3>🔗 Link gỡ block</h3>
-            <button onclick="openUnblockPage()">Mở trang gỡ block</button>
-            <button onclick="autoCompleteUnblock()" class="danger">🚀 Tự động hoàn thành</button>
-            <div id="unblockStatus" class="status warning">Chưa mở trang gỡ block</div>
+        <div class="link-box">
+            <strong>🔗 Link Facebook Help:</strong><br>
+            <a href="https://www.facebook.com/help/contact/571927962827151" target="_blank">
+                https://www.facebook.com/help/contact/571927962827151
+            </a>
         </div>
         
-        <div class="section">
-            <h3>📝 Nội dung yêu cầu gỡ block</h3>
-            <textarea id="unblockMessage" placeholder="Nhập nội dung yêu cầu gỡ block...">Gỡ khóa comment cho tôi. Tôi không vi phạm quy định nào. Tôi chỉ comment bình thường và không spam. Xin hãy xem xét lại và gỡ khóa cho tôi.</textarea>
-            <button onclick="autoFillForm()">Tự động điền form</button>
-            <button onclick="submitRequest()" class="danger">Gửi yêu cầu</button>
+        <div class="button-group">
+            <a href="https://www.facebook.com/help/contact/571927962827151" target="_blank" class="btn btn-primary">
+                🌐 Mở Trang Gỡ Block
+            </a>
+            <button onclick="openUnblockPage()" class="btn btn-success">
+                🚀 Mở Trang + Tự Động
+            </button>
         </div>
         
-        <div class="section">
-            <h3>📊 Trạng thái</h3>
-            <div id="statusInfo" class="status warning">Đang kiểm tra...</div>
-            <button onclick="checkBlockStatus()">Kiểm tra trạng thái block</button>
+        <div class="form-group">
+            <label for="unblockMessage">📝 Nội dung yêu cầu gỡ block:</label>
+            <textarea id="unblockMessage" placeholder="Nhập nội dung yêu cầu gỡ block...">
+Tôi muốn gỡ khóa comment cho tài khoản của mình. Tôi không vi phạm quy định nào của Facebook và cần khôi phục quyền comment để tương tác với bạn bè và gia đình. Tôi cam kết tuân thủ các quy định cộng đồng của Facebook trong tương lai.
+            </textarea>
         </div>
         
-        <div class="section">
-            <h3>📋 Log hoạt động</h3>
-            <button onclick="clearLogs()">Xóa log</button>
-            <div id="activityLog" class="log"></div>
+        <div class="button-group">
+            <button onclick="fillForm()" class="btn btn-warning">
+                📝 Tự Động Điền Form
+            </button>
+            <button onclick="submitForm()" class="btn btn-success">
+                📤 Tự Động Gửi
+            </button>
+            <button onclick="autoComplete()" class="btn btn-primary">
+                🤖 Tự Động Hoàn Toàn
+            </button>
         </div>
+        
+        <div class="auto-complete-section">
+            <h4>⚡ Tính năng tự động</h4>
+            <p>Nút "Tự Động Hoàn Toàn" sẽ:</p>
+            <ul>
+                <li>Mở trang gỡ block Facebook</li>
+                <li>Tự động điền form với nội dung có sẵn</li>
+                <li>Tự động gửi yêu cầu (có thể cần xác nhận)</li>
+            </ul>
+        </div>
+        
+        <div class="tips">
+            <h4>💡 Mẹo hữu ích</h4>
+            <ul>
+                <li>Đảm bảo đã đăng nhập Facebook trước khi sử dụng</li>
+                <li>Kiểm tra email để nhận phản hồi từ Facebook</li>
+                <li>Có thể mất 24-48 giờ để Facebook xử lý yêu cầu</li>
+                <li>Nếu bị từ chối, hãy thử lại sau 1-2 tuần</li>
+            </ul>
+        </div>
+        
+        <div id="status"></div>
     </div>
 
     <script>
-        // Log function
-        function log(message, type = 'info') {
-            const logDiv = document.getElementById('activityLog');
-            const timestamp = new Date().toLocaleTimeString();
-            const logEntry = document.createElement('div');
-            logEntry.innerHTML = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
-            logDiv.appendChild(logEntry);
-            logDiv.scrollTop = logDiv.scrollHeight;
-            console.log(`[${type.toUpperCase()}] ${message}`);
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
         }
         
-        function clearLogs() {
-            document.getElementById('activityLog').innerHTML = '';
-        }
-        
-        // Mở trang gỡ block
         function openUnblockPage() {
-            const url = 'https://www.facebook.com/help/contact/571927962827151';
-            const newWindow = window.open(url, '_blank');
-            document.getElementById('unblockStatus').textContent = '✅ Đã mở trang gỡ block';
-            document.getElementById('unblockStatus').className = 'status success';
-            log('Đã mở trang gỡ block');
-            
-            // Tự động điền form sau 3 giây
-            setTimeout(() => {
-                if (newWindow && !newWindow.closed) {
-                    try {
-                        newWindow.autoFillForm();
-                        log('Đã tự động điền form trong tab mới');
-                    } catch (error) {
-                        log('Không thể tự động điền form trong tab mới: ' + error.message);
-                    }
+            try {
+                const url = 'https://www.facebook.com/help/contact/571927962827151';
+                const newWindow = window.open(url, '_blank');
+                
+                if (newWindow) {
+                    showStatus('✅ Đã mở trang gỡ block Facebook', 'success');
+                    
+                    // Tự động điền form sau 3 giây
+                    setTimeout(() => {
+                        newWindow.postMessage({
+                            type: 'FILL_UNBLOCK_FORM',
+                            message: document.getElementById('unblockMessage').value
+                        }, '*');
+                    }, 3000);
+                } else {
+                    showStatus('❌ Không thể mở trang. Hãy kiểm tra popup blocker.', 'error');
                 }
-            }, 3000);
+            } catch (error) {
+                showStatus('❌ Lỗi khi mở trang: ' + error.message, 'error');
+            }
         }
         
-        // Tự động điền form
-        function autoFillForm() {
+        function fillForm() {
             try {
+                // Tìm tất cả textarea trong trang hiện tại
+                const textareas = document.querySelectorAll('textarea');
                 const message = document.getElementById('unblockMessage').value;
                 
-                // Tìm form với nhiều selector khác nhau
-                const formSelectors = [
-                    'form',
-                    '[data-testid="form"]',
-                    '[role="form"]',
-                    '.form-container',
-                    '.contact-form'
-                ];
-                
-                let form = null;
-                for (const selector of formSelectors) {
-                    form = document.querySelector(selector);
-                    if (form) {
-                        log('Tìm thấy form với selector: ' + selector);
-                        break;
-                    }
-                }
-                
-                if (form) {
-                    // Tìm textarea với nhiều selector
-                    const textAreaSelectors = [
-                        'textarea',
-                        'input[type="text"]',
-                        '[contenteditable="true"]',
-                        '[data-testid*="textarea"]',
-                        '[data-testid*="input"]'
-                    ];
-                    
-                    let textArea = null;
-                    for (const selector of textAreaSelectors) {
-                        textArea = form.querySelector(selector);
-                        if (textArea) {
-                            log('Tìm thấy textarea với selector: ' + selector);
-                            break;
-                        }
-                    }
-                    
-                    if (textArea) {
-                        // Thử nhiều cách điền
-                        if (textArea.tagName === 'TEXTAREA' || textArea.tagName === 'INPUT') {
-                            textArea.value = message;
-                        } else if (textArea.getAttribute('contenteditable') === 'true') {
-                            textArea.textContent = message;
-                        }
-                        
+                if (textareas.length > 0) {
+                    textareas.forEach(textarea => {
+                        textarea.value = message;
                         // Trigger input event
-                        textArea.dispatchEvent(new Event('input', { bubbles: true }));
-                        textArea.dispatchEvent(new Event('change', { bubbles: true }));
-                        
-                        log('Đã điền form với nội dung: ' + message.substring(0, 50) + '...');
-                        document.getElementById('unblockStatus').textContent = '✅ Đã điền form';
-                        document.getElementById('unblockStatus').className = 'status success';
-                    } else {
-                        log('Không tìm thấy textarea trong form', 'error');
-                        log('Form HTML: ' + form.innerHTML.substring(0, 200) + '...');
-                    }
+                        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                        textarea.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                    
+                    showStatus('✅ Đã điền form với nội dung yêu cầu', 'success');
                 } else {
-                    log('Không tìm thấy form trong trang hiện tại', 'error');
-                    log('Hãy mở trang gỡ block trước và đảm bảo đã đăng nhập Facebook', 'warning');
-                    log('URL hiện tại: ' + window.location.href);
+                    showStatus('⚠️ Không tìm thấy textarea trong trang hiện tại', 'info');
                 }
             } catch (error) {
-                log('Lỗi khi điền form: ' + error.message, 'error');
+                showStatus('❌ Lỗi khi điền form: ' + error.message, 'error');
             }
         }
         
-        // Gửi yêu cầu
-        function submitRequest() {
+        function submitForm() {
             try {
-                // Tìm form với nhiều selector
-                const formSelectors = [
-                    'form',
-                    '[data-testid="form"]',
-                    '[role="form"]',
-                    '.form-container',
-                    '.contact-form'
-                ];
+                // Tìm tất cả form submit buttons
+                const submitButtons = document.querySelectorAll('button[type="submit"], input[type="submit"]');
                 
-                let form = null;
-                for (const selector of formSelectors) {
-                    form = document.querySelector(selector);
-                    if (form) {
-                        log('Tìm thấy form để submit với selector: ' + selector);
-                        break;
-                    }
-                }
-                
-                if (form) {
-                    // Tìm nút submit với nhiều selector
-                    const submitSelectors = [
-                        'button[type="submit"]',
-                        'input[type="submit"]',
-                        'button[data-testid*="submit"]',
-                        'button[aria-label*="submit"]',
-                        'button[aria-label*="gửi"]',
-                        'button[aria-label*="send"]',
-                        '[data-testid*="submit"]',
-                        'button:contains("Submit")',
-                        'button:contains("Gửi")',
-                        'button:contains("Send")'
-                    ];
-                    
-                    let submitBtn = null;
-                    for (const selector of submitSelectors) {
-                        submitBtn = form.querySelector(selector);
-                        if (submitBtn) {
-                            log('Tìm thấy nút submit với selector: ' + selector);
-                            break;
+                if (submitButtons.length > 0) {
+                    submitButtons.forEach(button => {
+                        if (!button.disabled) {
+                            button.click();
                         }
-                    }
+                    });
                     
-                    if (submitBtn) {
-                        // Thử nhiều cách click
-                        try {
-                            submitBtn.click();
-                            log('Đã click nút submit');
-                        } catch (e) {
-                            log('Lỗi khi click, thử dispatch event: ' + e.message);
-                            submitBtn.dispatchEvent(new Event('click', { bubbles: true }));
-                        }
-                        
-                        log('Đã gửi yêu cầu gỡ block');
-                        document.getElementById('unblockStatus').textContent = '✅ Đã gửi yêu cầu';
-                        document.getElementById('unblockStatus').className = 'status success';
-                    } else {
-                        log('Không tìm thấy nút gửi', 'error');
-                        log('Form HTML: ' + form.innerHTML.substring(0, 300) + '...');
-                    }
+                    showStatus('✅ Đã gửi yêu cầu gỡ block', 'success');
                 } else {
-                    log('Không tìm thấy form', 'error');
+                    showStatus('⚠️ Không tìm thấy nút gửi trong trang hiện tại', 'info');
                 }
             } catch (error) {
-                log('Lỗi khi gửi yêu cầu: ' + error.message, 'error');
+                showStatus('❌ Lỗi khi gửi form: ' + error.message, 'error');
             }
         }
         
-        // Kiểm tra trạng thái block
-        function checkBlockStatus() {
-            const statusDiv = document.getElementById('statusInfo');
-            
-            // Kiểm tra các selector block
-            const blockSelectors = [
-                '[data-testid="block-notification"]',
-                '[aria-label*="block"]',
-                '[aria-label*="khóa"]',
-                'div[role="alert"]',
-                '.block-notification',
-                '.restriction-notice'
-            ];
-            
-            let isBlocked = false;
-            for (const selector of blockSelectors) {
-                const element = document.querySelector(selector);
-                if (element) {
-                    isBlocked = true;
-                    break;
+        function autoComplete() {
+            try {
+                showStatus('🚀 Bắt đầu quá trình tự động...', 'info');
+                
+                // Mở trang gỡ block
+                const url = 'https://www.facebook.com/help/contact/571927962827151';
+                const newWindow = window.open(url, '_blank');
+                
+                if (newWindow) {
+                    // Điền form sau 5 giây
+                    setTimeout(() => {
+                        try {
+                            const message = document.getElementById('unblockMessage').value;
+                            
+                            // Tìm và điền textarea
+                            const textareas = newWindow.document.querySelectorAll('textarea');
+                            textareas.forEach(textarea => {
+                                textarea.value = message;
+                                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                                textarea.dispatchEvent(new Event('change', { bubbles: true }));
+                            });
+                            
+                            showStatus('📝 Đã điền form tự động', 'success');
+                            
+                            // Gửi form sau 2 giây
+                            setTimeout(() => {
+                                try {
+                                    const submitButtons = newWindow.document.querySelectorAll('button[type="submit"], input[type="submit"]');
+                                    submitButtons.forEach(button => {
+                                        if (!button.disabled) {
+                                            button.click();
+                                        }
+                                    });
+                                    
+                                    showStatus('📤 Đã gửi yêu cầu tự động', 'success');
+                                } catch (error) {
+                                    showStatus('⚠️ Không thể gửi form tự động: ' + error.message, 'error');
+                                }
+                            }, 2000);
+                            
+                        } catch (error) {
+                            showStatus('⚠️ Không thể điền form tự động: ' + error.message, 'error');
+                        }
+                    }, 5000);
+                    
+                } else {
+                    showStatus('❌ Không thể mở trang gỡ block', 'error');
+                }
+            } catch (error) {
+                showStatus('❌ Lỗi trong quá trình tự động: ' + error.message, 'error');
+            }
+        }
+        
+        // Lắng nghe message từ content script
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'FILL_UNBLOCK_FORM') {
+                try {
+                    const textareas = document.querySelectorAll('textarea');
+                    const message = event.data.message;
+                    
+                    textareas.forEach(textarea => {
+                        textarea.value = message;
+                        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                        textarea.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                    
+                    showStatus('✅ Đã nhận và điền form từ content script', 'success');
+                } catch (error) {
+                    showStatus('❌ Lỗi khi điền form từ content script: ' + error.message, 'error');
                 }
             }
-            
-            if (isBlocked) {
-                statusDiv.textContent = '🚫 Phát hiện thông báo block comment';
-                statusDiv.className = 'status error';
-                log('Phát hiện thông báo block comment');
-            } else {
-                statusDiv.textContent = '✅ Không có thông báo block';
-                statusDiv.className = 'status success';
-                log('Không có thông báo block comment');
-            }
-        }
-        
-        // Auto check khi load
-        document.addEventListener('DOMContentLoaded', () => {
-            log('Trang gỡ block đã được load');
-            setTimeout(checkBlockStatus, 1000);
         });
         
-        // Tự động hoàn thành quy trình gỡ block
-        function autoCompleteUnblock() {
-            log('🚀 Bắt đầu quy trình tự động gỡ block');
-            
-            // Bước 1: Mở trang gỡ block
-            const url = 'https://www.facebook.com/help/contact/571927962827151';
-            const newWindow = window.open(url, '_blank');
-            
-            // Bước 2: Đợi trang load và điền form
-            setTimeout(() => {
-                if (newWindow && !newWindow.closed) {
-                    try {
-                        // Điền form
-                        const message = document.getElementById('unblockMessage').value;
-                        const form = newWindow.document.querySelector('form');
-                        if (form) {
-                            const textArea = form.querySelector('textarea') || form.querySelector('input[type="text"]');
-                            if (textArea) {
-                                textArea.value = message;
-                                textArea.dispatchEvent(new Event('input', { bubbles: true }));
-                                log('✅ Đã điền form trong tab mới');
-                                
-                                // Bước 3: Gửi form
-                                setTimeout(() => {
-                                    const submitBtn = form.querySelector('button[type="submit"]') || 
-                                                   form.querySelector('input[type="submit"]');
-                                    if (submitBtn) {
-                                        submitBtn.click();
-                                        log('✅ Đã gửi yêu cầu gỡ block');
-                                        document.getElementById('unblockStatus').textContent = '✅ Hoàn thành tự động';
-                                        document.getElementById('unblockStatus').className = 'status success';
-                                    } else {
-                                        log('❌ Không tìm thấy nút gửi', 'error');
-                                    }
-                                }, 1000);
-                            } else {
-                                log('❌ Không tìm thấy textarea', 'error');
-                            }
-                        } else {
-                            log('❌ Không tìm thấy form', 'error');
-                        }
-                    } catch (error) {
-                        log('❌ Lỗi khi tự động hoàn thành: ' + error.message, 'error');
-                    }
-                } else {
-                    log('❌ Tab gỡ block đã bị đóng', 'error');
-                }
-            }, 3000);
-        }
-        
-        // Kiểm tra định kỳ
-        setInterval(checkBlockStatus, 10000);
+        // Khởi tạo
+        showStatus('🚀 Sẵn sàng hỗ trợ gỡ block comment Facebook', 'info');
     </script>
 </body>
 </html> 

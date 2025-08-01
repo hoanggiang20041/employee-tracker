@@ -1,14 +1,13 @@
-// Content script cho Facebook tracking
+// Content script cho Facebook tracking - Tối ưu phiên bản
 console.log('🚀 Content script đã được nạp trên Facebook!');
-console.log('📍 URL hiện tại:', window.location.href);
 
 let isTracking = false;
 let currentEmployeeId = null;
 let currentEmployeeName = null;
-let lastCommentTime = 0; // Tránh duplicate comment
-let pendingComments = new Map(); // Lưu comment đang chờ gửi
+let lastCommentTime = 0;
+let pendingComments = new Map();
 
-// Load tracking status từ localStorage khi script khởi động
+// Load tracking status từ localStorage
 function loadTrackingStatusFromStorage() {
   try {
     const stored = localStorage.getItem('employee_tracker_status');
@@ -17,28 +16,27 @@ function loadTrackingStatusFromStorage() {
       isTracking = status.isTracking || false;
       currentEmployeeId = status.employeeId || null;
       currentEmployeeName = status.employeeName || null;
-      console.log('📥 Loaded tracking status from storage:', { isTracking, currentEmployeeId, currentEmployeeName });
+      console.log('📥 Loaded tracking status:', { isTracking, currentEmployeeId, currentEmployeeName });
     }
   } catch (error) {
-    console.error('❌ Lỗi khi load tracking status từ storage:', error);
+    console.error('❌ Lỗi load tracking status:', error);
   }
 }
 
-// Save tracking status vào localStorage
+// Save tracking status
 function saveTrackingStatusToStorage() {
   try {
     const status = { isTracking, currentEmployeeId, currentEmployeeName };
     localStorage.setItem('employee_tracker_status', JSON.stringify(status));
-    console.log('💾 Saved tracking status to storage:', status);
+    console.log('💾 Saved tracking status:', status);
   } catch (error) {
-    console.error('❌ Lỗi khi save tracking status vào storage:', error);
+    console.error('❌ Lỗi save tracking status:', error);
   }
 }
 
-// Kiểm tra trạng thái tracking từ background script
+// Kiểm tra trạng thái tracking
 async function checkTrackingStatus() {
   try {
-    // Kiểm tra xem extension context có hợp lệ không
     if (!chrome.runtime || !chrome.runtime.id) {
       console.log('⚠️ Extension context không hợp lệ, sử dụng cache');
       return isTracking;
@@ -48,21 +46,11 @@ async function checkTrackingStatus() {
     isTracking = response.isTracking;
     currentEmployeeId = response.employeeId;
     currentEmployeeName = response.employeeName;
-    console.log('📊 Tracking status:', { isTracking, currentEmployeeId, currentEmployeeName });
     
-    // Save status vào localStorage
     saveTrackingStatusToStorage();
-    
-    // Dispatch custom event để debug page có thể lắng nghe
-    document.dispatchEvent(new CustomEvent('tracking-status-updated', {
-      detail: { isTracking, currentEmployeeId, currentEmployeeName }
-    }));
-    
     return isTracking;
   } catch (error) {
-    console.error('❌ Lỗi khi kiểm tra trạng thái tracking:', error);
-    // Sử dụng cache nếu có lỗi
-    console.log('🔄 Sử dụng cache tracking status:', { isTracking, currentEmployeeId, currentEmployeeName });
+    console.error('❌ Lỗi kiểm tra tracking status:', error);
     return isTracking;
   }
 }
@@ -74,26 +62,16 @@ async function sendComment(comment) {
     return;
   }
   
-  // Tránh duplicate comment trong 5 giây
+  // Tránh duplicate trong 3 giây
   const now = Date.now();
-  if (now - lastCommentTime < 5000) {
+  if (now - lastCommentTime < 3000) {
     console.log('⚠️ Bỏ qua comment duplicate');
     return;
   }
   lastCommentTime = now;
   
   try {
-    console.log('📤 Đang gửi comment:', {
-      employeeId: currentEmployeeId,
-      employeeName: currentEmployeeName,
-      comment: comment.substring(0, 100) + (comment.length > 100 ? '...' : ''),
-      time: new Date().toISOString()
-    });
-    
-    // Dispatch custom event để debug
-    document.dispatchEvent(new CustomEvent('comment-detected', {
-      detail: { comment: comment.trim(), employeeId: currentEmployeeId, employeeName: currentEmployeeName }
-    }));
+    console.log('📤 Gửi comment:', comment.substring(0, 50));
     
     const response = await fetch('https://employee-tracker-2np8.onrender.com/comment', {
       method: 'POST',
@@ -107,66 +85,45 @@ async function sendComment(comment) {
     });
     
     if (response.ok) {
-      console.log('✅ Đã gửi comment thành công:', comment.substring(0, 50) + '...');
+      console.log('✅ Gửi comment thành công');
     } else {
-      const errorData = await response.json();
-      console.error('❌ Lỗi khi gửi comment:', errorData.error || response.status);
+      console.error('❌ Lỗi gửi comment:', response.status);
     }
   } catch (error) {
     console.error('❌ Lỗi kết nối server:', error);
   }
 }
 
-// Tìm comment box trên Facebook với nhiều selector
+// Tìm comment box - Tối ưu
 function findCommentBox() {
   const selectors = [
-    // Post composer
-    '[data-testid="post-composer-text-input"]',
-    '[data-testid="composer-text-input"]',
-    '[contenteditable="true"][data-testid*="composer"]',
-    
-    // Comment composer
-    '[data-testid="comment-composer-text-input"]',
-    '[contenteditable="true"][data-testid*="comment"]',
-    
-    // Generic contenteditable
     '[contenteditable="true"][role="textbox"]',
-    '[contenteditable="true"]',
-    
-    // Facebook specific
-    'div[contenteditable="true"][data-testid]',
-    'div[contenteditable="true"][aria-label*="comment"]',
-    'div[contenteditable="true"][aria-label*="post"]'
+    '[contenteditable="true"][data-testid*="composer"]',
+    '[contenteditable="true"][data-testid*="comment"]',
+    '[contenteditable="true"]'
   ];
   
   for (const selector of selectors) {
     const elements = document.querySelectorAll(selector);
     for (const element of elements) {
-      // Kiểm tra element có visible và focusable không
       if (element.offsetParent !== null && 
           element.style.display !== 'none' && 
           element.style.visibility !== 'hidden') {
-        console.log('🔍 Tìm thấy comment box:', selector);
         return element;
       }
     }
   }
-  
   return null;
 }
 
-// Tìm submit button
+// Tìm submit button - Tối ưu
 function findSubmitButton() {
   const selectors = [
-    '[data-testid="composer-post-button"]',
-    '[data-testid="composer-submit-button"]',
     '[aria-label="Comment"]',
     '[aria-label="Post"]',
-    '[aria-label="Đăng"]',
-    'button[type="submit"]',
-    'button[data-testid*="submit"]',
-    'button[data-testid*="post"]',
-    'button[data-testid*="comment"]'
+    '[data-testid*="submit"]',
+    '[data-testid*="post"]',
+    'button[type="submit"]'
   ];
   
   for (const selector of selectors) {
@@ -174,387 +131,151 @@ function findSubmitButton() {
     for (const element of elements) {
       if (element.offsetParent !== null && 
           element.style.display !== 'none' && 
-          element.style.visibility !== 'hidden' &&
           !element.disabled) {
-        console.log('🔍 Tìm thấy submit button:', selector);
         return element;
       }
     }
   }
-  
   return null;
 }
 
-// Kiểm tra và gỡ block comment
-async function checkAndUnblockComment() {
-  try {
-    // Kiểm tra xem có thông báo block không
-    const blockSelectors = [
-      '[data-testid="block-notification"]',
-      '[aria-label*="block"]',
-      '[aria-label*="khóa"]',
-      'div[role="alert"]',
-      '.block-notification',
-      '.restriction-notice'
-    ];
-    
-    for (const selector of blockSelectors) {
-      const blockElement = document.querySelector(selector);
-      if (blockElement) {
-        console.log('🚫 Phát hiện thông báo block comment');
-        
-        // Tìm link gỡ block
-        const unblockLink = document.querySelector('a[href*="help/contact"]') || 
-                           document.querySelector('a[href*="571927962827151"]');
-        
-        if (unblockLink) {
-          console.log('🔗 Tìm thấy link gỡ block, mở trang...');
-          window.open(unblockLink.href, '_blank');
-          
-          // Tự động điền form gỡ block
-          setTimeout(() => {
-            const unblockForm = document.querySelector('form');
-            if (unblockForm) {
-              const textArea = unblockForm.querySelector('textarea');
-              if (textArea) {
-                textArea.value = 'Gỡ khóa comment cho tôi. Tôi không vi phạm quy định nào.';
-                console.log('📝 Đã điền form gỡ block');
-                
-                // Tìm nút gửi và click
-                const submitBtn = unblockForm.querySelector('button[type="submit"]') ||
-                                unblockForm.querySelector('input[type="submit"]');
-                if (submitBtn) {
-                  submitBtn.click();
-                  console.log('📤 Đã gửi yêu cầu gỡ block');
-                }
-              }
-            }
-          }, 2000);
-        }
+// Lấy nội dung comment - Tối ưu
+function getCommentContent(element) {
+  if (!element) return '';
+  
+  // Thử nhiều cách
+  let content = element.innerText || element.textContent || '';
+  
+  // Nếu không có, tìm trong child elements
+  if (!content.trim()) {
+    const textElements = element.querySelectorAll('*');
+    for (const el of textElements) {
+      if (el.textContent && el.textContent.trim()) {
+        content = el.textContent;
         break;
       }
     }
-  } catch (error) {
-    console.error('❌ Lỗi khi kiểm tra block comment:', error);
   }
-}
-
-// Lưu comment đang chờ gửi
-function savePendingComment(comment, commentBox) {
-  const commentId = Date.now();
-  pendingComments.set(commentId, {
-    comment: comment,
-    commentBox: commentBox,
-    timestamp: Date.now()
-  });
-  console.log('💾 Lưu comment đang chờ:', comment.substring(0, 50));
-  return commentId;
+  
+  return content.trim();
 }
 
 // Xử lý comment khi nhấn Enter
 async function handleEnterComment(event) {
   if (event.key === 'Enter' && !event.shiftKey) {
-    console.log('⌨️ Phát hiện nhấn Enter');
-    
     const isTracking = await checkTrackingStatus();
-    if (!isTracking) {
-      console.log('⚠️ Không đang tracking, bỏ qua');
-      return;
-    }
+    if (!isTracking) return;
     
     setTimeout(() => {
       const active = document.activeElement;
       if (active && active.getAttribute('contenteditable') === 'true') {
-        // Thử nhiều cách lấy nội dung
-        let comment = active.innerText || active.textContent || active.innerHTML;
-        
-        // Nếu vẫn không có, thử tìm trong các element con
-        if (!comment || comment.trim().length === 0) {
-          const textElements = active.querySelectorAll('*');
-          for (const element of textElements) {
-            if (element.textContent && element.textContent.trim().length > 0) {
-              comment = element.textContent;
-              break;
-            }
-          }
+        const comment = getCommentContent(active);
+        if (comment) {
+          console.log('💬 Comment qua Enter:', comment.substring(0, 50));
+          sendComment(comment);
         }
-        
-        console.log('🔍 Active element content:', comment);
-        console.log('🔍 Active element HTML:', active.innerHTML);
-        
-        if (comment && comment.trim().length > 0) {
-          console.log('💬 Phát hiện comment qua Enter:', comment.substring(0, 50));
-          // Lưu comment đang chờ gửi
-          savePendingComment(comment, active);
-        } else {
-          console.log('⚠️ Không tìm thấy nội dung comment qua Enter');
+      }
+    }, 100);
+  }
+}
+
+// Xử lý comment khi click submit
+async function handleSubmitComment(event) {
+  const submitButton = findSubmitButton();
+  if (!submitButton) return;
+  
+  const isSubmitButton = event.target === submitButton || 
+                        submitButton.contains(event.target) ||
+                        event.target.closest('[aria-label="Comment"]') ||
+                        event.target.closest('[aria-label="Post"]');
+  
+  if (isSubmitButton) {
+    const isTracking = await checkTrackingStatus();
+    if (!isTracking) return;
+    
+    setTimeout(() => {
+      const commentBox = findCommentBox();
+      if (commentBox) {
+        const comment = getCommentContent(commentBox);
+        if (comment) {
+          console.log('💬 Comment qua Submit:', comment.substring(0, 50));
+          sendComment(comment);
         }
-      } else {
-        console.log('⚠️ Active element không phải comment box');
       }
     }, 200);
   }
 }
 
-// Xử lý comment khi click nút gửi
-async function handleSubmitComment(event) {
-  const submitButton = findSubmitButton();
-  if (!submitButton) return;
+// Xử lý paste
+async function handlePaste(event) {
+  const isTracking = await checkTrackingStatus();
+  if (!isTracking) return;
   
-  // Kiểm tra xem click có phải vào submit button không
-  const isSubmitButton = event.target === submitButton || 
-                        submitButton.contains(event.target) ||
-                        event.target.closest('[data-testid*="submit"]') ||
-                        event.target.closest('[data-testid*="post"]') ||
-                        event.target.closest('[data-testid*="comment"]');
-  
-  if (isSubmitButton) {
-    console.log('🖱️ Phát hiện click nút gửi');
-    
-    const isTracking = await checkTrackingStatus();
-    if (!isTracking) {
-      console.log('⚠️ Không đang tracking, bỏ qua');
-      return;
-    }
-    
-    setTimeout(async () => {
-      // Tìm comment box
-      let commentBox = findCommentBox();
-      
-      if (commentBox) {
-        // Thử nhiều cách lấy nội dung
-        let comment = commentBox.innerText || commentBox.textContent || commentBox.innerHTML;
-        
-        // Nếu vẫn không có, thử tìm trong các element con
-        if (!comment || comment.trim().length === 0) {
-          const textElements = commentBox.querySelectorAll('*');
-          for (const element of textElements) {
-            if (element.textContent && element.textContent.trim().length > 0) {
-              comment = element.textContent;
-              break;
-            }
-          }
-        }
-        
-        // Thử lấy từ clipboard data nếu có
-        if (!comment || comment.trim().length === 0) {
-          try {
-            const clipboardData = await navigator.clipboard.readText();
-            if (clipboardData && clipboardData.trim().length > 0) {
-              comment = clipboardData;
-              console.log('📋 Lấy comment từ clipboard:', comment.substring(0, 50));
-            }
-          } catch (error) {
-            console.log('⚠️ Không thể đọc clipboard:', error);
-          }
-        }
-        
-        console.log('🔍 Comment box content:', comment);
-        console.log('🔍 Comment box HTML:', commentBox.innerHTML);
-        
-        if (comment && comment.trim().length > 0) {
-          console.log('💬 Phát hiện comment qua nút gửi:', comment.substring(0, 50));
-          // Gửi comment thực sự
-          sendComment(comment);
-          
-          // Xóa comment khỏi pending
-          for (const [id, pending] of pendingComments.entries()) {
-            if (pending.comment === comment) {
-              pendingComments.delete(id);
-              console.log('🗑️ Xóa comment khỏi pending sau khi gửi');
-              break;
-            }
-          }
-        } else {
-          console.log('⚠️ Không tìm thấy nội dung comment');
-        }
-      } else {
-        console.log('⚠️ Không tìm thấy comment box');
+  const activeElement = document.activeElement;
+  if (activeElement && activeElement.getAttribute('contenteditable') === 'true') {
+    setTimeout(() => {
+      const comment = getCommentContent(activeElement);
+      if (comment) {
+        console.log('📋 Comment qua Paste:', comment.substring(0, 50));
+        sendComment(comment);
       }
-    }, 500);
+    }, 100);
   }
 }
 
-// Xử lý comment qua MutationObserver
-function setupCommentObserver() {
-  console.log('👀 Thiết lập observer cho comment');
+// Kiểm tra block comment
+async function checkBlockComment() {
+  const blockSelectors = [
+    '[data-testid="block-notification"]',
+    '[aria-label*="block"]',
+    '[aria-label*="khóa"]',
+    '.block-notification'
+  ];
   
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      if (mutation.type === 'childList') {
-        mutation.addedNodes.forEach((node) => {
-          if (node.nodeType === Node.ELEMENT_NODE) {
-            // Kiểm tra nếu có comment mới được thêm vào
-            const commentElements = node.querySelectorAll('[data-testid*="comment"], [data-testid*="post"]');
-            commentElements.forEach(async (element) => {
-              const isTracking = await checkTrackingStatus();
-              if (isTracking && currentEmployeeId) {
-                const commentText = element.textContent;
-                if (commentText && commentText.trim().length > 10) {
-                  console.log('👁️ Phát hiện comment mới qua observer:', commentText.substring(0, 50));
-                  // Không gửi ngay, chỉ log để debug
-                }
-              }
-            });
-          }
-        });
-      }
+  for (const selector of blockSelectors) {
+    const blockElement = document.querySelector(selector);
+    if (blockElement) {
+      console.log('🚫 Phát hiện block comment');
       
-      // Theo dõi thay đổi nội dung trong comment box
-      if (mutation.type === 'characterData' || mutation.type === 'childList') {
-        const target = mutation.target;
-        if (target && target.parentElement && target.parentElement.getAttribute('contenteditable') === 'true') {
-          const commentBox = target.parentElement;
-          const comment = commentBox.innerText || commentBox.textContent;
-          if (comment && comment.trim().length > 0) {
-            console.log('👁️ Phát hiện thay đổi nội dung comment box:', comment.substring(0, 50));
-            // Không gửi ngay, chỉ log để debug
-          }
-        }
-      }
-    });
-  });
-  
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-    characterData: true
-  });
-}
-
-// Xử lý comment qua FormData
-function setupFormObserver() {
-  console.log('📝 Thiết lập form observer');
-  
-  // Lắng nghe sự kiện submit form
-  document.addEventListener('submit', async (event) => {
-    const isTracking = await checkTrackingStatus();
-    if (!isTracking) return;
-    
-    console.log('📝 Phát hiện form submit');
-    
-    const form = event.target;
-    const textInputs = form.querySelectorAll('textarea, input[type="text"], [contenteditable="true"]');
-    
-    textInputs.forEach(input => {
-      let value = input.value || input.innerText || input.textContent;
+      // Tìm link gỡ block
+      const unblockLink = document.querySelector('a[href*="help/contact"]') || 
+                         document.querySelector('a[href*="571927962827151"]');
       
-      // Nếu vẫn không có, thử tìm trong các element con
-      if (!value || value.trim().length === 0) {
-        const textElements = input.querySelectorAll('*');
-        for (const element of textElements) {
-          if (element.textContent && element.textContent.trim().length > 0) {
-            value = element.textContent;
-            break;
-          }
-        }
+      if (unblockLink) {
+        console.log('🔗 Mở trang gỡ block...');
+        window.open(unblockLink.href, '_blank');
       }
-      
-      console.log('🔍 Form input content:', value);
-      console.log('🔍 Form input HTML:', input.innerHTML);
-      
-      if (value && value.trim().length > 0) {
-        console.log('📝 Phát hiện comment qua form submit:', value.substring(0, 50));
-        sendComment(value);
-      }
-    });
-    
-    // Nếu không có form data, thử tìm trong DOM
-    setTimeout(() => {
-      const commentBox = findCommentBox();
-      if (commentBox) {
-        let comment = commentBox.innerText || commentBox.textContent;
-        if (comment && comment.trim().length > 0) {
-          console.log('💬 Phát hiện comment qua form DOM:', comment.substring(0, 50));
-          sendComment(comment);
-        }
-      }
-    }, 100);
-  });
-}
-
-// Xử lý comment qua Clipboard API và Input events
-function setupClipboardObserver() {
-  console.log('📋 Thiết lập clipboard observer');
-  
-  // Lắng nghe sự kiện paste
-  document.addEventListener('paste', async (event) => {
-    const isTracking = await checkTrackingStatus();
-    if (!isTracking) return;
-    
-    const activeElement = document.activeElement;
-    if (activeElement && activeElement.getAttribute('contenteditable') === 'true') {
-      setTimeout(() => {
-        const comment = activeElement.innerText || activeElement.textContent;
-        if (comment && comment.trim().length > 0) {
-          console.log('📋 Phát hiện comment qua paste:', comment.substring(0, 50));
-          // Lưu comment đang chờ gửi
-          savePendingComment(comment, activeElement);
-        }
-      }, 500);
+      break;
     }
-  });
-  
-  // Lắng nghe sự kiện input để capture typing
-  document.addEventListener('input', async (event) => {
-    const isTracking = await checkTrackingStatus();
-    if (!isTracking) return;
-    
-    const target = event.target;
-    if (target && target.getAttribute('contenteditable') === 'true') {
-      // Debounce để tránh spam
-      clearTimeout(target.inputTimeout);
-      target.inputTimeout = setTimeout(() => {
-        const comment = target.innerText || target.textContent;
-        if (comment && comment.trim().length > 0) {
-          console.log('⌨️ Phát hiện comment qua typing:', comment.substring(0, 50));
-          // Không gửi ngay, chỉ log để debug
-        }
-      }, 1000);
-    }
-  });
+  }
 }
 
-// Kiểm tra block comment định kỳ
-function setupBlockChecker() {
-  console.log('🚫 Thiết lập block checker');
+// Setup observers
+function setupObservers() {
+  // Keydown listener
+  document.addEventListener('keydown', handleEnterComment);
   
-  // Kiểm tra mỗi 30 giây
+  // Click listener
+  document.addEventListener('click', handleSubmitComment);
+  
+  // Paste listener
+  document.addEventListener('paste', handlePaste);
+  
+  // Block checker
   setInterval(async () => {
     const isTracking = await checkTrackingStatus();
     if (isTracking) {
-      await checkAndUnblockComment();
+      await checkBlockComment();
     }
   }, 30000);
+  
+  // Status checker
+  setInterval(checkTrackingStatus, 5000);
 }
 
-// Load tracking status khi script khởi động
+// Khởi tạo
 loadTrackingStatusFromStorage();
-
-// Lắng nghe sự kiện nhấn phím
-document.addEventListener('keydown', handleEnterComment);
-
-// Lắng nghe sự kiện click
-document.addEventListener('click', handleSubmitComment);
-
-// Thiết lập các observer
-setupCommentObserver();
-setupFormObserver();
-setupClipboardObserver();
-setupBlockChecker();
-
-// Kiểm tra trạng thái tracking định kỳ
-setInterval(checkTrackingStatus, 3000);
-
-// Khởi tạo trạng thái ban đầu
+setupObservers();
 checkTrackingStatus();
 
-// Log khi script được load
-console.log('🚀 Content script đã sẵn sàng tracking Facebook comments');
-
-// Thêm debug info
-console.log('🔧 Debug info:');
-console.log('- Facebook URL:', window.location.href);
-console.log('- User Agent:', navigator.userAgent);
-console.log('- Content editable elements:', document.querySelectorAll('[contenteditable="true"]').length);
-console.log('- Submit buttons:', document.querySelectorAll('button[type="submit"]').length);
+console.log('🚀 Content script đã sẵn sàng!');
