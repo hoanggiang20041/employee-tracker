@@ -34,24 +34,37 @@ function saveTrackingStatusToStorage() {
   }
 }
 
-// Kiểm tra trạng thái tracking
+// Kiểm tra trạng thái tracking từ background script
 async function checkTrackingStatus() {
   try {
-    if (!chrome.runtime || !chrome.runtime.id) {
-      console.log('⚠️ Extension context không hợp lệ, sử dụng cache');
-      return isTracking;
-    }
-    
     const response = await chrome.runtime.sendMessage({ action: 'getStatus' });
-    isTracking = response.isTracking;
-    currentEmployeeId = response.employeeId;
-    currentEmployeeName = response.employeeName;
-    
-    saveTrackingStatusToStorage();
-    return isTracking;
+    console.log('📊 Tracking status:', response);
+    return response;
   } catch (error) {
-    console.error('❌ Lỗi kiểm tra tracking status:', error);
-    return isTracking;
+    console.log('⚠️ Extension context không hợp lệ, sử dụng cache');
+    // Fallback: sử dụng cache từ localStorage
+    const cachedStatus = localStorage.getItem('trackingStatus');
+    if (cachedStatus) {
+      return JSON.parse(cachedStatus);
+    }
+    return { isTracking: false, currentEmployeeId: null, currentEmployeeName: null };
+  }
+}
+
+// Lưu trạng thái tracking
+async function saveTrackingStatus(status) {
+  try {
+    await chrome.runtime.sendMessage({ 
+      action: 'saveStatus', 
+      status: status 
+    });
+    // Cache vào localStorage
+    localStorage.setItem('trackingStatus', JSON.stringify(status));
+    console.log('💾 Saved tracking status:', status);
+  } catch (error) {
+    console.log('⚠️ Extension context không hợp lệ, chỉ lưu cache');
+    // Chỉ lưu cache khi extension context invalid
+    localStorage.setItem('trackingStatus', JSON.stringify(status));
   }
 }
 

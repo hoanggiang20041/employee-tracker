@@ -4,32 +4,10 @@ let timerInterval = null;
 
 // Khởi tạo popup
 document.addEventListener('DOMContentLoaded', async () => {
-  await checkLoginStatus();
   await loadSavedEmployeeInfo();
   await updateStatus();
   setupValidation();
 });
-
-// Kiểm tra trạng thái đăng nhập
-async function checkLoginStatus() {
-  try {
-    // Kiểm tra từ server thay vì local storage
-    const response = await fetch('https://employee-tracker-2np8.onrender.com/employee-session');
-    if (response.ok) {
-      const sessionData = await response.json();
-      if (sessionData.employeeId && sessionData.employeeName) {
-        console.log('✅ Đã đăng nhập từ server:', sessionData);
-        return;
-      }
-    }
-    
-    // Nếu không có session trên server, chuyển đến trang đăng nhập
-    window.location.href = 'employee-login.html';
-  } catch (error) {
-    console.error('❌ Lỗi khi kiểm tra đăng nhập:', error);
-    window.location.href = 'employee-login.html';
-  }
-}
 
 // Load thông tin nhân viên đã lưu
 async function loadSavedEmployeeInfo() {
@@ -334,10 +312,14 @@ async function logout() {
     // Dừng tracking nếu đang chạy
     await chrome.runtime.sendMessage({ action: 'stopTracking' });
     
-    // Chuyển về trang đăng nhập
-    window.location.href = 'employee-login.html';
+    // Reset form
+    document.getElementById('employeeId').value = '';
+    document.getElementById('employeeName').value = '';
+    await updateStatus();
+    
+    showStatus('🚪 Đã đăng xuất', 'info');
   } catch (error) {
     console.error('❌ Lỗi khi đăng xuất:', error);
-    window.location.href = 'employee-login.html';
+    showStatus('❌ Lỗi khi đăng xuất', 'error');
   }
 }
