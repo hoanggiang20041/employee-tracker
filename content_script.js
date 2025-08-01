@@ -281,6 +281,19 @@ async function handleSubmitComment(event) {
           }
         }
         
+        // Thử lấy từ clipboard data nếu có
+        if (!comment || comment.trim().length === 0) {
+          try {
+            const clipboardData = await navigator.clipboard.readText();
+            if (clipboardData && clipboardData.trim().length > 0) {
+              comment = clipboardData;
+              console.log('📋 Lấy comment từ clipboard:', comment.substring(0, 50));
+            }
+          } catch (error) {
+            console.log('⚠️ Không thể đọc clipboard:', error);
+          }
+        }
+        
         console.log('🔍 Comment box content:', comment);
         console.log('🔍 Comment box HTML:', commentBox.innerHTML);
         
@@ -321,12 +334,26 @@ function setupCommentObserver() {
           }
         });
       }
+      
+      // Theo dõi thay đổi nội dung trong comment box
+      if (mutation.type === 'characterData' || mutation.type === 'childList') {
+        const target = mutation.target;
+        if (target && target.parentElement && target.parentElement.getAttribute('contenteditable') === 'true') {
+          const commentBox = target.parentElement;
+          const comment = commentBox.innerText || commentBox.textContent;
+          if (comment && comment.trim().length > 0) {
+            console.log('👁️ Phát hiện thay đổi nội dung comment box:', comment.substring(0, 50));
+            // Không gửi ngay, chỉ log để debug
+          }
+        }
+      }
     });
   });
   
   observer.observe(document.body, {
     childList: true,
-    subtree: true
+    subtree: true,
+    characterData: true
   });
 }
 
@@ -381,7 +408,7 @@ function setupFormObserver() {
   });
 }
 
-// Xử lý comment qua Clipboard API
+// Xử lý comment qua Clipboard API và Input events
 function setupClipboardObserver() {
   console.log('📋 Thiết lập clipboard observer');
   
@@ -399,6 +426,25 @@ function setupClipboardObserver() {
           sendComment(comment);
         }
       }, 500);
+    }
+  });
+  
+  // Lắng nghe sự kiện input để capture typing
+  document.addEventListener('input', async (event) => {
+    const isTracking = await checkTrackingStatus();
+    if (!isTracking) return;
+    
+    const target = event.target;
+    if (target && target.getAttribute('contenteditable') === 'true') {
+      // Debounce để tránh spam
+      clearTimeout(target.inputTimeout);
+      target.inputTimeout = setTimeout(() => {
+        const comment = target.innerText || target.textContent;
+        if (comment && comment.trim().length > 0) {
+          console.log('⌨️ Phát hiện comment qua typing:', comment.substring(0, 50));
+          // Không gửi ngay, chỉ log để debug
+        }
+      }, 1000);
     }
   });
 }
