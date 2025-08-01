@@ -5,35 +5,54 @@ let currentEmployeeId = null;
 let currentEmployeeName = null;
 let startTime = null;
 
-// Khởi tạo trạng thái từ storage khi extension khởi động
-async function initializeFromStorage() {
+// Khởi tạo trạng thái từ server khi extension khởi động
+async function initializeFromServer() {
   try {
-    const result = await chrome.storage.local.get(['isTracking', 'employeeId', 'employeeName', 'startTime']);
-    if (result.isTracking) {
-      isTracking = result.isTracking;
-      currentEmployeeId = result.employeeId;
-      currentEmployeeName = result.employeeName;
-      startTime = result.startTime;
-      console.log('📊 Khôi phục trạng thái từ storage:', { isTracking, currentEmployeeId, currentEmployeeName, startTime });
-      updateBadge();
+    const response = await fetch('https://employee-tracker-2np8.onrender.com/employee-session');
+    if (response.ok) {
+      const sessionData = await response.json();
+      if (sessionData.employeeId && sessionData.employeeName) {
+        // Kiểm tra xem có đang tracking không bằng cách gọi API tracking status
+        const trackingResponse = await fetch('https://employee-tracker-2np8.onrender.com/tracking-status');
+        if (trackingResponse.ok) {
+          const trackingData = await trackingResponse.json();
+          if (trackingData.isTracking) {
+            isTracking = true;
+            currentEmployeeId = sessionData.employeeId;
+            currentEmployeeName = sessionData.employeeName;
+            startTime = trackingData.startTime;
+            console.log('📊 Khôi phục trạng thái từ server:', { isTracking, currentEmployeeId, currentEmployeeName, startTime });
+            updateBadge();
+          }
+        }
+      }
     }
   } catch (error) {
-    console.error('❌ Lỗi khi khôi phục từ storage:', error);
+    console.error('❌ Lỗi khi khôi phục từ server:', error);
   }
 }
 
-// Lưu trạng thái vào storage
-async function saveToStorage() {
+// Lưu trạng thái vào server
+async function saveToServer() {
   try {
-    await chrome.storage.local.set({
-      isTracking,
-      employeeId: currentEmployeeId,
-      employeeName: currentEmployeeName,
-      startTime
+    const response = await fetch('https://employee-tracker-2np8.onrender.com/tracking-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        isTracking,
+        employeeId: currentEmployeeId,
+        employeeName: currentEmployeeName,
+        startTime
+      })
     });
-    console.log('💾 Đã lưu trạng thái vào storage');
+    
+    if (response.ok) {
+      console.log('💾 Đã lưu trạng thái vào server');
+    } else {
+      console.error('❌ Lỗi khi lưu vào server');
+    }
   } catch (error) {
-    console.error('❌ Lỗi khi lưu vào storage:', error);
+    console.error('❌ Lỗi khi lưu vào server:', error);
   }
 }
 
@@ -47,7 +66,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     currentEmployeeName = request.employeeName;
     startTime = new Date().toISOString();
     
-    saveToStorage();
+    saveToServer();
     updateBadge();
     
     console.log('▶️ Bắt đầu tracking:', { currentEmployeeId, currentEmployeeName, startTime });
@@ -60,8 +79,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     currentEmployeeName = null;
     startTime = null;
     
-    // Xóa khỏi storage
-    chrome.storage.local.remove(['isTracking', 'employeeId', 'employeeName', 'startTime']);
+    // Xóa tracking status khỏi server
+    fetch('https://employee-tracker-2np8.onrender.com/tracking-status', {
+      method: 'DELETE'
+    }).catch(error => {
+      console.error('❌ Lỗi khi xóa tracking status:', error);
+    });
     
     updateBadge();
     console.log('⏹️ Dừng tracking');
@@ -123,14 +146,14 @@ function updateBadge() {
 // Khởi tạo khi extension khởi động
 chrome.runtime.onStartup.addListener(() => {
   console.log('🚀 Extension khởi động');
-  initializeFromStorage();
+  initializeFromServer();
 });
 
 // Khởi tạo khi extension được cài đặt
 chrome.runtime.onInstalled.addListener(() => {
   console.log('📦 Extension được cài đặt');
-  initializeFromStorage();
+  initializeFromServer();
 });
 
 // Khởi tạo ngay lập tức
-initializeFromStorage();
+initializeFromServer();

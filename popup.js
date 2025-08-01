@@ -13,15 +13,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Kiểm tra trạng thái đăng nhập
 async function checkLoginStatus() {
   try {
-    const result = await chrome.storage.local.get(['isLoggedIn', 'employeeId', 'employeeName']);
-    
-    if (!result.isLoggedIn) {
-      // Chuyển đến trang đăng nhập
-      window.location.href = 'employee-login.html';
-      return;
+    // Kiểm tra từ server thay vì local storage
+    const response = await fetch('https://employee-tracker-2np8.onrender.com/employee-session');
+    if (response.ok) {
+      const sessionData = await response.json();
+      if (sessionData.employeeId && sessionData.employeeName) {
+        console.log('✅ Đã đăng nhập từ server:', sessionData);
+        return;
+      }
     }
     
-    console.log('✅ Đã đăng nhập:', result);
+    // Nếu không có session trên server, chuyển đến trang đăng nhập
+    window.location.href = 'employee-login.html';
   } catch (error) {
     console.error('❌ Lỗi khi kiểm tra đăng nhập:', error);
     window.location.href = 'employee-login.html';
@@ -31,22 +34,14 @@ async function checkLoginStatus() {
 // Load thông tin nhân viên đã lưu
 async function loadSavedEmployeeInfo() {
   try {
-    // Thử load từ chrome.storage trước
-    const result = await chrome.storage.local.get(['employeeId', 'employeeName']);
-    if (result.employeeId && result.employeeName) {
-      document.getElementById('employeeId').value = result.employeeId;
-      document.getElementById('employeeName').value = result.employeeName;
-      console.log('📥 Loaded employee info from storage:', result);
-    } else {
-      // Thử load từ server
-      const response = await fetch('https://employee-tracker-2np8.onrender.com/employee-session');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.employeeId && data.employeeName) {
-          document.getElementById('employeeId').value = data.employeeId;
-          document.getElementById('employeeName').value = data.employeeName;
-          console.log('📥 Loaded employee info from server:', data);
-        }
+    // Load từ server
+    const response = await fetch('https://employee-tracker-2np8.onrender.com/employee-session');
+    if (response.ok) {
+      const data = await response.json();
+      if (data.employeeId && data.employeeName) {
+        document.getElementById('employeeId').value = data.employeeId;
+        document.getElementById('employeeName').value = data.employeeName;
+        console.log('📥 Loaded employee info from server:', data);
       }
     }
   } catch (error) {
@@ -57,14 +52,7 @@ async function loadSavedEmployeeInfo() {
 // Lưu thông tin nhân viên
 async function saveEmployeeInfo(employeeId, employeeName) {
   try {
-    // Lưu vào chrome.storage
-    await chrome.storage.local.set({
-      employeeId: employeeId,
-      employeeName: employeeName
-    });
-    console.log('💾 Saved employee info to storage:', { employeeId, employeeName });
-    
-    // Lưu vào server
+    // Chỉ lưu vào server
     const response = await fetch('https://employee-tracker-2np8.onrender.com/employee-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -338,8 +326,10 @@ function showStatus(message, type) {
 // Hàm đăng xuất
 async function logout() {
   try {
-    // Xóa dữ liệu đăng nhập
-    await chrome.storage.local.remove(['isLoggedIn', 'employeeId', 'employeeName']);
+    // Xóa session trên server
+    await fetch('https://employee-tracker-2np8.onrender.com/employee-session', {
+      method: 'DELETE'
+    });
     
     // Dừng tracking nếu đang chạy
     await chrome.runtime.sendMessage({ action: 'stopTracking' });

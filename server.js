@@ -16,6 +16,7 @@ let activities = [];
 let comments = [];
 let employees = []; // Danh sách nhân viên được admin quản lý
 let employeeSessions = new Map(); // Lưu session của nhân viên
+let trackingStatus = new Map(); // Lưu trạng thái tracking của nhân viên
 
 // Helper function để lưu data vào file
 function saveDataToFile() {
@@ -24,6 +25,7 @@ function saveDataToFile() {
     comments, 
     employees, 
     employeeSessions: Array.from(employeeSessions.entries()),
+    trackingStatus: Array.from(trackingStatus.entries()),
     lastUpdated: new Date().toISOString() 
   };
   fs.writeFileSync(path.join(__dirname, 'data.json'), JSON.stringify(data, null, 2));
@@ -44,7 +46,12 @@ function loadDataFromFile() {
         employeeSessions = new Map(data.employeeSessions);
       }
       
-      console.log(`✅ Đã load ${activities.length} activities, ${comments.length} comments, ${employees.length} employees, ${employeeSessions.size} sessions từ file`);
+      // Load tracking status
+      if (data.trackingStatus) {
+        trackingStatus = new Map(data.trackingStatus);
+      }
+      
+      console.log(`✅ Đã load ${activities.length} activities, ${comments.length} comments, ${employees.length} employees, ${employeeSessions.size} sessions, ${trackingStatus.size} tracking status từ file`);
     }
   } catch (error) {
     console.error('❌ Lỗi khi load data từ file:', error);
@@ -422,6 +429,103 @@ app.get('/employee-session', (req, res) => {
   }
 });
 
+// Xóa session nhân viên (đăng xuất)
+app.delete('/employee-session', (req, res) => {
+  const { employeeId } = req.query;
+  
+  if (employeeId) {
+    // Xóa session của nhân viên cụ thể
+    if (employeeSessions.has(employeeId)) {
+      employeeSessions.delete(employeeId);
+      // Cũng xóa tracking status
+      if (trackingStatus.has(employeeId)) {
+        trackingStatus.delete(employeeId);
+      }
+      saveDataToFile();
+      console.log(`🚪 Đăng xuất nhân viên: ${employeeId}`);
+      res.json({ success: true, message: 'Đăng xuất thành công' });
+    } else {
+      res.status(404).json({ error: 'Không tìm thấy session' });
+    }
+  } else {
+    // Xóa tất cả sessions
+    employeeSessions.clear();
+    trackingStatus.clear();
+    saveDataToFile();
+    console.log('🚪 Đã xóa tất cả sessions và tracking status');
+    res.json({ success: true, message: 'Đã xóa tất cả sessions' });
+  }
+});
+
+// API quản lý tracking status
+app.post('/tracking-status', (req, res) => {
+  const { employeeId, employeeName, isTracking, startTime } = req.body;
+  
+  if (!employeeId || !employeeName) {
+    return res.status(400).json({ error: 'Thiếu thông tin nhân viên' });
+  }
+  
+  trackingStatus.set(employeeId, {
+    employeeId,
+    employeeName,
+    isTracking: isTracking || false,
+    startTime: startTime || null,
+    lastUpdated: new Date().toISOString()
+  });
+  
+  saveDataToFile();
+  console.log(`📊 Cập nhật tracking status: ${employeeId} - ${isTracking ? 'ON' : 'OFF'}`);
+  res.json({ success: true });
+});
+
+app.get('/tracking-status', (req, res) => {
+  const { employeeId } = req.query;
+  
+  if (employeeId) {
+    // Lấy tracking status của nhân viên cụ thể
+    const status = trackingStatus.get(employeeId);
+    if (status) {
+      res.json(status);
+    } else {
+      res.json({ isTracking: false, employeeId: null, employeeName: null, startTime: null });
+    }
+  } else {
+    // Trả về tracking status mới nhất
+    const statuses = Array.from(trackingStatus.values());
+    const latestStatus = statuses.sort((a, b) => 
+      new Date(b.lastUpdated) - new Date(a.lastUpdated)
+    )[0];
+    
+    if (latestStatus) {
+      res.json(latestStatus);
+    } else {
+      res.json({ isTracking: false, employeeId: null, employeeName: null, startTime: null });
+    }
+  }
+});
+
+app.delete('/tracking-status', (req, res) => {
+  const { employeeId } = req.query;
+  
+  if (employeeId) {
+    // Xóa tracking status của nhân viên cụ thể
+    if (trackingStatus.has(employeeId)) {
+      trackingStatus.delete(employeeId);
+      saveDataToFile();
+      console.log(`⏹️ Dừng tracking: ${employeeId}`);
+      res.json({ success: true, message: 'Đã dừng tracking' });
+    } else {
+      res.status(404).json({ error: 'Không tìm thấy tracking status' });
+    }
+  } else {
+    // Xóa tất cả tracking status
+    trackingStatus.clear();
+    saveDataToFile();
+    console.log('⏹️ Đã xóa tất cả tracking status');
+    res.json({ success: true, message: 'Đã xóa tất cả tracking status' });
+  }
+});
+
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
@@ -430,7 +534,8 @@ app.get('/health', (req, res) => {
       activities: activities.length,
       comments: comments.length,
       employees: employees.length,
-      sessions: employeeSessions.size
+      sessions: employeeSessions.size,
+      trackingStatus: trackingStatus.size
     }
   });
 });

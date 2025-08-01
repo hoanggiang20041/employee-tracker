@@ -240,15 +240,8 @@
                 if (loginResult.success) {
                     showStatus('✅ Đăng nhập thành công!', 'success');
                     
-                    // Lưu session
+                    // Lưu session trên server
                     await saveEmployeeSession(employeeId, loginResult.employeeName);
-                    
-                    // Lưu vào chrome.storage
-                    await chrome.storage.local.set({
-                        employeeId: employeeId,
-                        employeeName: loginResult.employeeName,
-                        isLoggedIn: true
-                    });
                     
                     // Chuyển về popup chính
                     setTimeout(() => {
