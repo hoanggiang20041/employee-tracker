@@ -15,10 +15,17 @@ app.use(express.static(__dirname));
 let activities = [];
 let comments = [];
 let employees = []; // Danh sách nhân viên được admin quản lý
+let employeeSessions = new Map(); // Lưu session của nhân viên
 
 // Helper function để lưu data vào file
 function saveDataToFile() {
-  const data = { activities, comments, employees, lastUpdated: new Date().toISOString() };
+  const data = { 
+    activities, 
+    comments, 
+    employees, 
+    employeeSessions: Array.from(employeeSessions.entries()),
+    lastUpdated: new Date().toISOString() 
+  };
   fs.writeFileSync(path.join(__dirname, 'data.json'), JSON.stringify(data, null, 2));
 }
 
@@ -31,7 +38,13 @@ function loadDataFromFile() {
       activities = data.activities || [];
       comments = data.comments || [];
       employees = data.employees || [];
-      console.log(`✅ Đã load ${activities.length} activities, ${comments.length} comments, ${employees.length} employees từ file`);
+      
+      // Load employee sessions
+      if (data.employeeSessions) {
+        employeeSessions = new Map(data.employeeSessions);
+      }
+      
+      console.log(`✅ Đã load ${activities.length} activities, ${comments.length} comments, ${employees.length} employees, ${employeeSessions.size} sessions từ file`);
     }
   } catch (error) {
     console.error('❌ Lỗi khi load data từ file:', error);
@@ -307,6 +320,52 @@ app.delete('/data', requireAdmin, (req, res) => {
 });
 
 // Health check
+// Employee session management
+app.post('/employee-session', (req, res) => {
+  const { employeeId, employeeName } = req.body;
+  
+  if (!employeeId || !employeeName) {
+    return res.status(400).json({ error: 'Thiếu thông tin nhân viên' });
+  }
+  
+  // Lưu session
+  employeeSessions.set(employeeId, {
+    employeeId,
+    employeeName,
+    lastUpdated: new Date().toISOString()
+  });
+  
+  saveDataToFile();
+  console.log(`💾 Lưu session cho nhân viên: ${employeeName} (${employeeId})`);
+  res.json({ success: true });
+});
+
+app.get('/employee-session', (req, res) => {
+  const { employeeId } = req.query;
+  
+  if (employeeId) {
+    // Lấy session của nhân viên cụ thể
+    const session = employeeSessions.get(employeeId);
+    if (session) {
+      res.json(session);
+    } else {
+      res.status(404).json({ error: 'Không tìm thấy session' });
+    }
+  } else {
+    // Trả về session mới nhất
+    const sessions = Array.from(employeeSessions.values());
+    const latestSession = sessions.sort((a, b) => 
+      new Date(b.lastUpdated) - new Date(a.lastUpdated)
+    )[0];
+    
+    if (latestSession) {
+      res.json(latestSession);
+    } else {
+      res.status(404).json({ error: 'Không có session nào' });
+    }
+  }
+});
+
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
@@ -314,7 +373,8 @@ app.get('/health', (req, res) => {
     dataCount: {
       activities: activities.length,
       comments: comments.length,
-      employees: employees.length
+      employees: employees.length,
+      sessions: employeeSessions.size
     }
   });
 });

@@ -4,9 +4,63 @@ let timerInterval = null;
 
 // Khởi tạo popup
 document.addEventListener('DOMContentLoaded', async () => {
+  await loadSavedEmployeeInfo();
   await updateStatus();
   setupValidation();
 });
+
+// Load thông tin nhân viên đã lưu
+async function loadSavedEmployeeInfo() {
+  try {
+    // Thử load từ chrome.storage trước
+    const result = await chrome.storage.local.get(['employeeId', 'employeeName']);
+    if (result.employeeId && result.employeeName) {
+      document.getElementById('employeeId').value = result.employeeId;
+      document.getElementById('employeeName').value = result.employeeName;
+      console.log('📥 Loaded employee info from storage:', result);
+    } else {
+      // Thử load từ server
+      const response = await fetch('https://employee-tracker-2np8.onrender.com/employee-session');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.employeeId && data.employeeName) {
+          document.getElementById('employeeId').value = data.employeeId;
+          document.getElementById('employeeName').value = data.employeeName;
+          console.log('📥 Loaded employee info from server:', data);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('❌ Lỗi khi load employee info:', error);
+  }
+}
+
+// Lưu thông tin nhân viên
+async function saveEmployeeInfo(employeeId, employeeName) {
+  try {
+    // Lưu vào chrome.storage
+    await chrome.storage.local.set({
+      employeeId: employeeId,
+      employeeName: employeeName
+    });
+    console.log('💾 Saved employee info to storage:', { employeeId, employeeName });
+    
+    // Lưu vào server
+    const response = await fetch('https://employee-tracker-2np8.onrender.com/employee-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ employeeId, employeeName })
+    });
+    
+    if (response.ok) {
+      console.log('💾 Saved employee info to server');
+    } else {
+      console.error('❌ Lỗi khi lưu employee info lên server');
+    }
+  } catch (error) {
+    console.error('❌ Lỗi khi lưu employee info:', error);
+  }
+}
 
 // Thiết lập validation
 function setupValidation() {
@@ -200,6 +254,9 @@ document.getElementById('startBtn').onclick = async function() {
       showStatus(`❌ ${validationResult.message}`, 'error');
       return;
     }
+    
+    // Lưu thông tin nhân viên
+    await saveEmployeeInfo(employeeId, employeeName);
     
     // Gửi message đến background script
     const response = await chrome.runtime.sendMessage({
