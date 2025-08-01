@@ -230,14 +230,97 @@
       }
       
       .admin-link a {
-        color: rgba(255, 255, 255, 0.8);
+        color: #667eea;
         text-decoration: none;
-        font-size: 11px;
+        font-weight: 500;
       }
       
       .admin-link a:hover {
-        color: white;
         text-decoration: underline;
+      }
+      
+      /* Appeal section styles */
+      .appeal-section {
+        margin: 15px 0;
+        padding: 15px;
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        border-radius: 10px;
+        text-align: center;
+      }
+      
+      .appeal-section .btn {
+        background: white;
+        color: #ee5a24;
+        border: 2px solid white;
+        font-weight: bold;
+        padding: 12px 20px;
+        margin-bottom: 8px;
+      }
+      
+      .appeal-section .btn:hover {
+        background: #f8f9fa;
+        transform: translateY(-2px);
+      }
+      
+      .appeal-info {
+        color: white;
+        font-size: 12px;
+        opacity: 0.9;
+      }
+      
+      /* Employee info styles */
+      .employee-info {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+        margin: 15px 0;
+        border-left: 4px solid #4CAF50;
+      }
+      
+      .info-item {
+        margin: 8px 0;
+        font-size: 14px;
+      }
+      
+      .info-item strong {
+        color: #333;
+      }
+      
+      /* Timer styles */
+      .timer {
+        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        color: white;
+        padding: 10px;
+        border-radius: 8px;
+        text-align: center;
+        font-weight: bold;
+        font-size: 16px;
+        margin: 10px 0;
+      }
+      
+      /* Help text styles */
+      .help-text {
+        background: #e3f2fd;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+        border-left: 4px solid #2196F3;
+      }
+      
+      .help-text p {
+        margin: 0 0 10px 0;
+        font-weight: bold;
+        color: #1976d2;
+      }
+      
+      .help-text ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+      
+      .help-text li {
+        margin: 5px 0;
+        color: #333;
       }
     </style>
   </head>
@@ -258,23 +341,53 @@
       </div>
       
       <div class="button-group">
-        <button id="startBtn" type="button">▶️ Bắt đầu</button>
-        <button id="stopBtn" type="button" disabled>⏹️ Dừng</button>
+        <button id="startBtn" type="button" class="btn btn-success">▶️ Bắt đầu</button>
+        <button id="stopBtn" type="button" class="btn btn-danger">⏹️ Dừng</button>
       </div>
       
-      <div id="status" class="status info">Sẵn sàng theo dõi</div>
-      <div id="timer" class="timer" style="display: none;"></div>
-      <div id="employeeInfo" class="employee-info" style="display: none;">
-        <button type="button" onclick="logout()">🚪 Đăng xuất</button>
+      <div class="status" id="status">Sẵn sàng theo dõi</div>
+      
+      <div class="timer" id="timer" style="display: none;">
+        <span id="timeDisplay">00:00:00</span>
+      </div>
+      
+      <div class="employee-info" id="employeeInfo" style="display: none;">
+        <div class="info-item">
+          <strong>Nhân viên:</strong> <span id="employeeNameDisplay"></span>
+        </div>
+        <div class="info-item">
+          <strong>Mã:</strong> <span id="employeeIdDisplay"></span>
+        </div>
+        <div class="info-item">
+          <strong>Bắt đầu:</strong> <span id="startTimeDisplay"></span>
+        </div>
+        <button onclick="logout()" class="btn btn-warning">🚪 Đăng xuất</button>
+      </div>
+      
+      <!-- Nút kháng cáo 151 -->
+      <div class="appeal-section">
+        <button id="appealBtn" class="btn btn-primary" onclick="openAppealForm()">
+          🚨 Kháng cáo 151
+        </button>
+        <div class="appeal-info">
+          <small>Tự động mở form kháng cáo Facebook</small>
+        </div>
       </div>
       
       <div class="help-text">
-        💡 Mã nhân viên: NV001, EMP001, E001<br>
-        💡 Tên nhân viên: Họ tên đầy đủ
+        <p><strong>Hướng dẫn:</strong></p>
+        <ul>
+          <li>Nhập mã nhân viên và tên</li>
+          <li>Bấm "Bắt đầu" để theo dõi</li>
+          <li>Extension sẽ ghi nhận comment Facebook</li>
+          <li>Bấm "Dừng" khi kết thúc</li>
+        </ul>
       </div>
       
       <div class="admin-link">
-        <a href="https://employee-tracker-2np8.onrender.com/admin.html" target="_blank">👨‍💼 Trang Admin</a>
+        <a href="https://employee-tracker-2np8.onrender.com/admin.html" target="_blank">
+          🔧 Trang Admin
+        </a>
       </div>
     </div>
     

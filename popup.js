@@ -158,7 +158,7 @@ function validateEmployeeName() {
 function validateAllFormat() {
   const isIdValid = validateEmployeeId();
   const isNameValid = validateEmployeeName();
-  return isIdValid && isNameValid;
+  return { isValid: isIdValid && isNameValid, message: isIdValid && isNameValid ? '✅ Thông tin hợp lệ' : '❌ Vui lòng nhập đúng định dạng thông tin!' };
 }
 
 // Validate nhân viên từ server
@@ -253,19 +253,17 @@ function startTimer(startTime) {
 document.getElementById('startBtn').onclick = async function() {
   console.log('Đã bấm nút Bắt đầu');
   
-  // Validate format trước
-  if (!validateAllFormat()) {
-    showStatus('Vui lòng nhập đúng định dạng thông tin!', 'error');
-    return;
-  }
-  
   const employeeId = document.getElementById('employeeId').value.trim();
   const employeeName = document.getElementById('employeeName').value.trim();
   
+  if (!employeeId || !employeeName) {
+    showStatus('❌ Vui lòng nhập mã nhân viên và tên nhân viên', 'error');
+    return;
+  }
+  
   try {
-    // Validate với server
-    const validationResult = await validateEmployeeFromServer(employeeId, employeeName);
-    
+    // Validate format
+    const validationResult = validateAllFormat();
     if (!validationResult.isValid) {
       showStatus(`❌ ${validationResult.message}`, 'error');
       return;
@@ -273,6 +271,20 @@ document.getElementById('startBtn').onclick = async function() {
     
     // Lưu thông tin nhân viên
     await saveEmployeeInfo(employeeId, employeeName);
+    
+    // Cập nhật biến global
+    currentEmployeeId = employeeId;
+    currentEmployeeName = employeeName;
+    isTracking = true;
+    startTime = new Date().toISOString();
+    
+    // Lưu tracking status lên server
+    await saveTrackingStatus({
+      isTracking: true,
+      employeeId: employeeId,
+      employeeName: employeeName,
+      startTime: startTime
+    });
     
     // Gửi message đến background script
     const response = await chrome.runtime.sendMessage({
@@ -283,20 +295,20 @@ document.getElementById('startBtn').onclick = async function() {
     
     if (response.success) {
       // Gửi dữ liệu đến server
-      const startTime = new Date().toISOString();
       const serverResponse = await fetch('https://employee-tracker-2np8.onrender.com/activity', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           employeeId, 
           employeeName,
+          type: 'start',
           startTime 
         })
       });
       
       if (serverResponse.ok) {
         showStatus('✅ Đã bắt đầu theo dõi!', 'success');
-        await updateStatus();
+        updateUI();
       } else {
         const errorData = await serverResponse.json();
         showStatus(`❌ ${errorData.error || 'Gửi dữ liệu thất bại!'}`, 'error');
@@ -313,11 +325,35 @@ document.getElementById('stopBtn').onclick = async function() {
   console.log('Đã bấm nút Dừng');
   
   try {
+    // Cập nhật biến global
+    isTracking = false;
+    const endTime = new Date().toISOString();
+    
+    // Gửi activity kết thúc
+    if (currentEmployeeId && currentEmployeeName) {
+      await fetch('https://employee-tracker-2np8.onrender.com/activity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          employeeId: currentEmployeeId, 
+          employeeName: currentEmployeeName,
+          type: 'stop',
+          startTime: startTime,
+          endTime: endTime
+        })
+      });
+    }
+    
+    // Xóa tracking status khỏi server
+    await fetch('https://employee-tracker-2np8.onrender.com/tracking-status', {
+      method: 'DELETE'
+    });
+    
     const response = await chrome.runtime.sendMessage({ action: 'stopTracking' });
     
     if (response.success) {
       showStatus('⏹️ Đã dừng theo dõi!', 'info');
-      await updateStatus();
+      updateUI();
     }
   } catch (error) {
     console.error('Lỗi khi dừng tracking:', error);
@@ -389,5 +425,111 @@ async function saveTrackingStatus(status) {
     }
   } catch (error) {
     console.error('❌ Lỗi khi lưu tracking status:', error);
+  }
+}
+
+// Hàm mở form kháng cáo 151
+function openAppealForm() {
+  try {
+    // Mở trang kháng cáo Facebook
+    const appealUrl = 'https://www.facebook.com/help/contact/571927962827151';
+    chrome.tabs.create({ url: appealUrl });
+    
+    showStatus('🚨 Đã mở form kháng cáo Facebook', 'info');
+    
+    // Gửi message đến content script để tự động điền form
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, { 
+          action: 'openAppealForm',
+          employeeId: currentEmployeeId,
+          employeeName: currentEmployeeName
+        });
+      }
+    });
+    
+    console.log('🚨 Opened appeal form for:', currentEmployeeId, currentEmployeeName);
+  } catch (error) {
+    console.error('❌ Lỗi khi mở form kháng cáo:', error);
+    showStatus('❌ Lỗi khi mở form kháng cáo', 'error');
+  }
+}
+
+// Cập nhật UI với thông tin tracking
+function updateUI() {
+  const startBtn = document.getElementById('startBtn');
+  const stopBtn = document.getElementById('stopBtn');
+  const status = document.getElementById('status');
+  const timer = document.getElementById('timer');
+  const employeeInfo = document.getElementById('employeeInfo');
+  const employeeNameDisplay = document.getElementById('employeeNameDisplay');
+  const employeeIdDisplay = document.getElementById('employeeIdDisplay');
+  const startTimeDisplay = document.getElementById('startTimeDisplay');
+  
+  if (isTracking) {
+    startBtn.style.display = 'none';
+    stopBtn.style.display = 'inline-block';
+    status.textContent = '🟢 Đang theo dõi';
+    status.className = 'status success';
+    timer.style.display = 'block';
+    employeeInfo.style.display = 'block';
+    
+    // Hiển thị thông tin nhân viên
+    employeeNameDisplay.textContent = currentEmployeeName || 'N/A';
+    employeeIdDisplay.textContent = currentEmployeeId || 'N/A';
+    
+    if (startTime) {
+      const startDate = new Date(startTime);
+      startTimeDisplay.textContent = startDate.toLocaleString('vi-VN');
+    }
+    
+    // Bắt đầu timer
+    startTimer();
+  } else {
+    startBtn.style.display = 'inline-block';
+    stopBtn.style.display = 'none';
+    status.textContent = '⏸️ Chưa theo dõi';
+    status.className = 'status info';
+    timer.style.display = 'none';
+    employeeInfo.style.display = 'none';
+    
+    // Dừng timer
+    stopTimer();
+  }
+}
+
+// Timer functions
+function startTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+  }
+  
+  timerInterval = setInterval(() => {
+    if (startTime) {
+      const now = new Date();
+      const start = new Date(startTime);
+      const diff = now - start;
+      
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      const timeDisplay = document.getElementById('timeDisplay');
+      if (timeDisplay) {
+        timeDisplay.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+  
+  const timeDisplay = document.getElementById('timeDisplay');
+  if (timeDisplay) {
+    timeDisplay.textContent = '00:00:00';
   }
 }

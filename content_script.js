@@ -1,4 +1,4 @@
-// Content script cho Facebook comment tracking
+// Content script cho Facebook comment tracking - Hoàn toàn độc lập
 console.log('🚀 Content script đã load');
 
 // Biến global để lưu trạng thái
@@ -6,7 +6,8 @@ let isTracking = false;
 let currentEmployeeId = null;
 let currentEmployeeName = null;
 let startTime = null;
-let pendingComments = new Map();
+let lastCommentTime = 0;
+let commentCount = 0;
 
 // Khởi tạo từ server khi load
 async function initializeFromServer() {
@@ -90,6 +91,22 @@ async function sendComment(comment) {
     
     if (response.ok) {
       console.log('✅ Đã gửi comment:', comment.content.substring(0, 50) + '...');
+      
+      // Tăng số lượng comment
+      commentCount++;
+      
+      // Hiển thị thông báo
+      showNotification(`💬 ${currentEmployeeName} đã comment (${commentCount})`, comment.content.substring(0, 100));
+      
+      // Gửi activity comment
+      await sendActivity({
+        employeeId: currentEmployeeId,
+        employeeName: currentEmployeeName,
+        type: 'comment',
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        details: `Comment #${commentCount}: ${comment.content.substring(0, 50)}...`
+      });
     } else {
       console.error('❌ Lỗi khi gửi comment');
     }
@@ -98,10 +115,57 @@ async function sendComment(comment) {
   }
 }
 
+// Hiển thị thông báo
+function showNotification(title, message) {
+  // Tạo notification element
+  const notification = document.createElement('div');
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #4CAF50;
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 10000;
+    max-width: 300px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    animation: slideIn 0.3s ease;
+  `;
+  
+  notification.innerHTML = `
+    <div style="font-weight: bold; margin-bottom: 5px;">${title}</div>
+    <div style="font-size: 12px; opacity: 0.9;">${message}</div>
+  `;
+  
+  // Thêm CSS animation
+  const style = document.createElement('style');
+  style.textContent = `
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  `;
+  document.head.appendChild(style);
+  
+  document.body.appendChild(notification);
+  
+  // Tự động ẩn sau 5 giây
+  setTimeout(() => {
+    notification.style.animation = 'slideOut 0.3s ease';
+    setTimeout(() => {
+      if (notification.parentNode) {
+        notification.parentNode.removeChild(notification);
+      }
+    }, 300);
+  }, 5000);
+}
+
 // Kiểm tra trạng thái tracking
 async function checkTrackingStatus() {
   if (!isTracking || !currentEmployeeId || !currentEmployeeName) {
-    console.log('📊 Tracking status:', { isTracking, currentEmployeeId, currentEmployeeName });
     return false;
   }
   return true;
@@ -145,15 +209,20 @@ function getCommentContent(element) {
 // Xử lý comment submit
 async function handleCommentSubmit(commentElement, submitButton) {
   if (!await checkTrackingStatus()) {
-    console.log('❌ Không đang tracking hoặc chưa có thông tin nhân viên');
     return;
   }
   
   const content = getCommentContent(commentElement);
   if (!content) {
-    console.log('❌ Không tìm thấy nội dung comment');
     return;
   }
+  
+  // Tránh duplicate trong 3 giây
+  const now = Date.now();
+  if (now - lastCommentTime < 3000) {
+    return;
+  }
+  lastCommentTime = now;
   
   console.log('📝 Tìm thấy comment:', content.substring(0, 50) + '...');
   
@@ -171,8 +240,6 @@ async function handleCommentSubmit(commentElement, submitButton) {
 
 // Tìm và theo dõi comment boxes
 function setupCommentTracking() {
-  console.log('🔍 Tìm comment boxes...');
-  
   // Các selector cho comment boxes
   const commentSelectors = [
     'div[contenteditable="true"][data-lexical-editor="true"]',
@@ -198,7 +265,6 @@ function setupCommentTracking() {
       if (commentElement.dataset.tracked) return; // Đã track rồi
       
       commentElement.dataset.tracked = 'true';
-      console.log('🎯 Đã track comment element:', selector);
       
       // Tìm submit button gần nhất
       let submitButton = null;
@@ -215,18 +281,14 @@ function setupCommentTracking() {
       }
       
       if (submitButton) {
-        console.log('🔍 Tìm thấy submit button:', submitButton);
-        
         // Lắng nghe sự kiện submit
         submitButton.addEventListener('click', async (e) => {
-          console.log('🖱️ Submit button clicked');
           await handleCommentSubmit(commentElement, submitButton);
         });
         
         // Lắng nghe Enter key
         commentElement.addEventListener('keydown', async (e) => {
           if (e.key === 'Enter' && !e.shiftKey) {
-            console.log('⌨️ Enter pressed');
             e.preventDefault();
             await handleCommentSubmit(commentElement, submitButton);
           }
@@ -287,5 +349,5 @@ if (document.readyState === 'loading') {
   init();
 }
 
-// Chạy lại mỗi 5 giây để đảm bảo không bỏ sót
-setInterval(setupCommentTracking, 5000);
+// Chạy lại mỗi 10 giây để đảm bảo không bỏ sót (giảm từ 5 giây)
+setInterval(setupCommentTracking, 10000);
