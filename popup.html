@@ -275,14 +275,21 @@
         border-radius: 10px;
         margin: 15px 0;
         border-left: 4px solid #4CAF50;
+        color: #333;
       }
       
       .info-item {
         margin: 8px 0;
         font-size: 14px;
+        color: #333;
       }
       
       .info-item strong {
+        color: #333;
+        font-weight: bold;
+      }
+      
+      .info-item span {
         color: #333;
       }
       
@@ -298,6 +305,11 @@
         margin: 10px 0;
       }
       
+      .timer span {
+        color: white;
+        font-weight: bold;
+      }
+      
       /* Help text styles */
       .help-text {
         background: #e3f2fd;
@@ -305,6 +317,7 @@
         border-radius: 8px;
         margin: 15px 0;
         border-left: 4px solid #2196F3;
+        color: #333;
       }
       
       .help-text p {
@@ -316,11 +329,65 @@
       .help-text ul {
         margin: 0;
         padding-left: 20px;
+        color: #333;
       }
       
       .help-text li {
         margin: 5px 0;
         color: #333;
+      }
+      
+      /* Status styles */
+      .status {
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px 0;
+        font-weight: 600;
+        color: #333;
+      }
+      
+      .status.success {
+        background: #d4edda;
+        color: #155724;
+      }
+      
+      .status.error {
+        background: #f8d7da;
+        color: #721c24;
+      }
+      
+      .status.info {
+        background: #d1ecf1;
+        color: #0c5460;
+      }
+      
+      /* Button styles */
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: 500;
+        margin: 5px;
+        color: white;
+        font-size: 14px;
+      }
+      
+      .btn-success {
+        background: #28a745;
+      }
+      
+      .btn-danger {
+        background: #dc3545;
+      }
+      
+      .btn-warning {
+        background: #ffc107;
+        color: #333;
+      }
+      
+      .btn-primary {
+        background: #007bff;
       }
     </style>
   </head>

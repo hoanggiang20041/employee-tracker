@@ -25,6 +25,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+// Auto-save khi popup đóng
+window.addEventListener('beforeunload', async () => {
+  if (isTracking && currentEmployeeId && currentEmployeeName) {
+    try {
+      // Lưu tracking status trước khi đóng
+      await saveTrackingStatus({
+        isTracking: true,
+        employeeId: currentEmployeeId,
+        employeeName: currentEmployeeName,
+        startTime: startTime
+      });
+      console.log('💾 Auto-saved tracking status before popup close');
+    } catch (error) {
+      console.error('❌ Lỗi auto-save:', error);
+    }
+  }
+});
+
 // Load thông tin nhân viên đã lưu
 async function loadSavedEmployeeInfo() {
   try {
@@ -265,7 +283,7 @@ document.getElementById('startBtn').onclick = async function() {
       return;
     }
     
-    // Lưu thông tin nhân viên
+    // Lưu thông tin nhân viên trước
     await saveEmployeeInfo(employeeId, employeeName);
     
     // Cập nhật biến global
@@ -274,7 +292,7 @@ document.getElementById('startBtn').onclick = async function() {
     isTracking = true;
     startTime = new Date().toISOString();
     
-    // Lưu tracking status lên server
+    // Lưu tracking status lên server ngay lập tức
     await saveTrackingStatus({
       isTracking: true,
       employeeId: employeeId,
@@ -340,7 +358,7 @@ document.getElementById('stopBtn').onclick = async function() {
       });
     }
     
-    // Xóa tracking status khỏi server
+    // Xóa tracking status khỏi server ngay lập tức
     await fetch('https://employee-tracker-2np8.onrender.com/tracking-status', {
       method: 'DELETE'
     });
@@ -428,22 +446,31 @@ async function saveTrackingStatus(status) {
 // Hàm mở form kháng cáo 151
 function openAppealForm() {
   try {
-    // Mở trang kháng cáo Facebook
+    // Mở trang kháng cáo Facebook với mobile user agent
     const appealUrl = 'https://www.facebook.com/help/contact/571927962827151';
-    chrome.tabs.create({ url: appealUrl });
     
-    showStatus('🚨 Đã mở form kháng cáo Facebook', 'info');
-    
-    // Gửi message đến content script để tự động điền form
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]) {
-        chrome.tabs.sendMessage(tabs[0].id, { 
-          action: 'openAppealForm',
-          employeeId: currentEmployeeId,
-          employeeName: currentEmployeeName
-        });
-      }
+    // Tạo tab mới với mobile user agent
+    chrome.tabs.create({ 
+      url: appealUrl,
+      active: true
+    }, (tab) => {
+      // Inject script để chuyển sang mobile view
+      chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => {
+          // Thay đổi user agent thành mobile
+          Object.defineProperty(navigator, 'userAgent', {
+            value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1',
+            writable: false
+          });
+          
+          // Reload trang để áp dụng mobile view
+          window.location.reload();
+        }
+      });
     });
+    
+    showStatus('🚨 Đã mở form kháng cáo Facebook (Mobile)', 'info');
     
     console.log('🚨 Opened appeal form for:', currentEmployeeId, currentEmployeeName);
   } catch (error) {
