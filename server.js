@@ -161,6 +161,29 @@ app.delete('/employees/:employeeId', requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
+// API cập nhật mật khẩu nhân viên
+app.put('/employees/:employeeId/password', requireAdmin, (req, res) => {
+  const { employeeId } = req.params;
+  const { password } = req.body;
+  
+  if (!password || password.length < 6) {
+    return res.status(400).json({ error: 'Mật khẩu phải có ít nhất 6 ký tự' });
+  }
+  
+  const employeeIndex = employees.findIndex(emp => emp.employeeId === employeeId);
+  if (employeeIndex === -1) {
+    return res.status(404).json({ error: 'Không tìm thấy nhân viên' });
+  }
+  
+  employees[employeeIndex].password = password;
+  employees[employeeIndex].updatedAt = new Date().toISOString();
+  
+  saveDataToFile();
+  
+  console.log(`🔐 Cập nhật mật khẩu cho nhân viên: ${employeeId}`);
+  res.json({ success: true, message: 'Cập nhật mật khẩu thành công' });
+});
+
 // API để validate nhân viên từ extension
 app.post('/validate-employee', (req, res) => {
   const { employeeId, employeeName } = req.body;

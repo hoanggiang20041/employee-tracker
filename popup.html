@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <title>Employee Tracker</title>
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
       body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         width: 350px;
@@ -11,6 +17,8 @@
         margin: 0;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
+        position: relative;
+        z-index: 1;
       }
       
       .container {
@@ -19,6 +27,8 @@
         padding: 20px;
         backdrop-filter: blur(10px);
         border: 1px solid rgba(255, 255, 255, 0.2);
+        position: relative;
+        z-index: 2;
       }
       
       h1 {
@@ -30,6 +40,8 @@
       
       .input-group {
         margin-bottom: 15px;
+        position: relative;
+        z-index: 3;
       }
       
       .input-group label {
@@ -48,6 +60,8 @@
         color: #333;
         font-size: 14px;
         box-sizing: border-box;
+        position: relative;
+        z-index: 4;
       }
       
       input:focus {
@@ -64,6 +78,8 @@
         font-size: 11px;
         margin-top: 3px;
         color: #ffeb3b;
+        position: relative;
+        z-index: 5;
       }
       
       .validation-message.error {
@@ -74,6 +90,8 @@
         display: flex;
         gap: 10px;
         margin-bottom: 15px;
+        position: relative;
+        z-index: 6;
       }
       
       button {
@@ -85,6 +103,22 @@
         font-weight: 500;
         cursor: pointer;
         transition: all 0.3s ease;
+        position: relative;
+        z-index: 7;
+        pointer-events: auto;
+        user-select: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+      }
+      
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      }
+      
+      button:active {
+        transform: translateY(0);
       }
       
       #startBtn {
@@ -94,13 +128,13 @@
       
       #startBtn:hover {
         background: #45a049;
-        transform: translateY(-1px);
       }
       
       #startBtn:disabled {
         background: #ccc;
         cursor: not-allowed;
         transform: none;
+        box-shadow: none;
       }
       
       #stopBtn {
@@ -110,13 +144,13 @@
       
       #stopBtn:hover {
         background: #da190b;
-        transform: translateY(-1px);
       }
       
       #stopBtn:disabled {
         background: #ccc;
         cursor: not-allowed;
         transform: none;
+        box-shadow: none;
       }
       
       .status {
@@ -125,6 +159,8 @@
         margin-top: 10px;
         font-size: 12px;
         text-align: center;
+        position: relative;
+        z-index: 8;
       }
       
       .status.success {
@@ -149,6 +185,8 @@
         padding: 10px;
         background: rgba(255, 255, 255, 0.1);
         border-radius: 5px;
+        position: relative;
+        z-index: 9;
       }
       
       .employee-info {
@@ -157,6 +195,24 @@
         padding: 10px;
         margin-top: 10px;
         font-size: 12px;
+        position: relative;
+        z-index: 10;
+      }
+      
+      .employee-info button {
+        margin-top: 10px;
+        padding: 5px 10px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        width: 100%;
+      }
+      
+      .employee-info button:hover {
+        background: #c82333;
       }
       
       .help-text {
@@ -164,6 +220,8 @@
         color: rgba(255, 255, 255, 0.7);
         margin-top: 5px;
         text-align: center;
+        position: relative;
+        z-index: 11;
       }
     </style>
   </head>
@@ -184,23 +242,14 @@
       </div>
       
       <div class="button-group">
-        <button id="startBtn">▶️ Bắt đầu</button>
-        <button id="stopBtn" disabled>⏹️ Dừng</button>
+        <button id="startBtn" type="button">▶️ Bắt đầu</button>
+        <button id="stopBtn" type="button" disabled>⏹️ Dừng</button>
       </div>
       
       <div id="status" class="status info">Sẵn sàng theo dõi</div>
       <div id="timer" class="timer" style="display: none;"></div>
       <div id="employeeInfo" class="employee-info" style="display: none;">
-        <button onclick="logout()" style="
-          margin-top: 10px;
-          padding: 5px 10px;
-          background: #dc3545;
-          color: white;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 12px;
-        ">🚪 Đăng xuất</button>
+        <button type="button" onclick="logout()">🚪 Đăng xuất</button>
       </div>
       
       <div class="help-text">

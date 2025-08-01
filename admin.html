@@ -398,6 +398,35 @@
         </div>
     </div>
     
+    <!-- Modal cập nhật mật khẩu -->
+    <div id="passwordModal" class="modal">
+        <div class="modal-content">
+            <h2>🔐 Cập nhật mật khẩu nhân viên</h2>
+            <form id="passwordForm">
+                <div class="form-group">
+                    <label for="passwordEmployeeId">Mã nhân viên</label>
+                    <input type="text" id="passwordEmployeeId" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="passwordEmployeeName">Tên nhân viên</label>
+                    <input type="text" id="passwordEmployeeName" readonly>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">Mật khẩu mới *</label>
+                    <input type="password" id="newPassword" placeholder="Nhập mật khẩu mới" required>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">Xác nhận mật khẩu *</label>
+                    <input type="password" id="confirmPassword" placeholder="Nhập lại mật khẩu" required>
+                </div>
+                <div class="controls">
+                    <button type="submit" class="btn btn-success">🔐 Cập nhật mật khẩu</button>
+                    <button type="button" class="btn btn-danger" onclick="closePasswordModal()">❌ Hủy</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
     <script src="config.js"></script>
     <script>
         // Check admin authentication
@@ -489,6 +518,7 @@
                         </span>
                         <div class="employee-actions">
                             <button class="btn btn-primary btn-small" onclick="editEmployee('${employee.employeeId}')">✏️ Sửa</button>
+                            <button class="btn btn-warning btn-small" onclick="updatePassword('${employee.employeeId}', '${employee.employeeName}')">🔐 Mật khẩu</button>
                             <button class="btn btn-danger btn-small" onclick="deleteEmployee('${employee.employeeId}')">🗑️ Xóa</button>
                         </div>
                     `;
@@ -728,7 +758,55 @@
         
         // Auto refresh mỗi 30 giây
         setInterval(updateStats, 30000);
+        
+        // Password management functions
+        function updatePassword(employeeId, employeeName) {
+            document.getElementById('passwordEmployeeId').value = employeeId;
+            document.getElementById('passwordEmployeeName').value = employeeName;
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+            document.getElementById('passwordModal').style.display = 'block';
+        }
+        
+        function closePasswordModal() {
+            document.getElementById('passwordModal').style.display = 'none';
+        }
+        
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const employeeId = document.getElementById('passwordEmployeeId').value;
+            
+            if (newPassword !== confirmPassword) {
+                showError('Mật khẩu xác nhận không khớp!');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                showError('Mật khẩu phải có ít nhất 6 ký tự!');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/employees/${employeeId}/password?admin_token=admin123`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: newPassword })
+                });
+                
+                if (response.ok) {
+                    showSuccess('Cập nhật mật khẩu thành công!');
+                    closePasswordModal();
+                } else {
+                    const errorData = await response.json();
+                    showError(errorData.error || 'Lỗi khi cập nhật mật khẩu');
+                }
+            } catch (error) {
+                showError('Lỗi khi cập nhật mật khẩu: ' + error.message);
+            }
+        });
     </script>
   </body>
-</html>
 </html>
