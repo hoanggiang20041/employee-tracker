@@ -8,25 +8,32 @@ let startTime = null;
 // Khởi tạo trạng thái từ server khi extension khởi động
 async function initializeFromServer() {
   try {
-    const response = await fetch('https://employee-tracker-2np8.onrender.com/employee-session');
-    if (response.ok) {
-      const sessionData = await response.json();
+    console.log('🔄 Khởi tạo từ server...');
+    
+    // Lấy session từ server
+    const sessionResponse = await fetch('https://employee-tracker-2np8.onrender.com/employee-session');
+    if (sessionResponse.ok) {
+      const sessionData = await sessionResponse.json();
       if (sessionData.employeeId && sessionData.employeeName) {
-        // Kiểm tra xem có đang tracking không bằng cách gọi API tracking status
-        const trackingResponse = await fetch('https://employee-tracker-2np8.onrender.com/tracking-status');
-        if (trackingResponse.ok) {
-          const trackingData = await trackingResponse.json();
-          if (trackingData.isTracking) {
-            isTracking = true;
-            currentEmployeeId = sessionData.employeeId;
-            currentEmployeeName = sessionData.employeeName;
-            startTime = trackingData.startTime;
-            console.log('📊 Khôi phục trạng thái từ server:', { isTracking, currentEmployeeId, currentEmployeeName, startTime });
-            updateBadge();
-          }
-        }
+        currentEmployeeId = sessionData.employeeId;
+        currentEmployeeName = sessionData.employeeName;
+        console.log('✅ Loaded session from server:', sessionData);
       }
     }
+    
+    // Lấy tracking status từ server
+    const trackingResponse = await fetch('https://employee-tracker-2np8.onrender.com/tracking-status');
+    if (trackingResponse.ok) {
+      const trackingData = await trackingResponse.json();
+      if (trackingData.isTracking) {
+        isTracking = true;
+        startTime = trackingData.startTime;
+        console.log('✅ Loaded tracking status from server:', trackingData);
+      }
+    }
+    
+    updateBadge();
+    console.log('📊 Khôi phục trạng thái từ server:', { isTracking, currentEmployeeId, currentEmployeeName, startTime });
   } catch (error) {
     console.error('❌ Lỗi khi khôi phục từ server:', error);
   }
@@ -35,15 +42,17 @@ async function initializeFromServer() {
 // Lưu trạng thái vào server
 async function saveToServer() {
   try {
+    const trackingData = {
+      isTracking,
+      employeeId: currentEmployeeId,
+      employeeName: currentEmployeeName,
+      startTime
+    };
+    
     const response = await fetch('https://employee-tracker-2np8.onrender.com/tracking-status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        isTracking,
-        employeeId: currentEmployeeId,
-        employeeName: currentEmployeeName,
-        startTime
-      })
+      body: JSON.stringify(trackingData)
     });
     
     if (response.ok) {
@@ -100,6 +109,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     };
     console.log('📊 Trả về trạng thái:', response);
     sendResponse(response);
+  }
+  
+  if (request.action === 'saveStatus') {
+    const { status } = request;
+    isTracking = status.isTracking;
+    currentEmployeeId = status.employeeId;
+    currentEmployeeName = status.employeeName;
+    startTime = status.startTime;
+    
+    saveToServer();
+    updateBadge();
+    
+    console.log('💾 Đã lưu trạng thái:', status);
+    sendResponse({ success: true });
   }
   
   if (request.action === 'validateEmployee') {

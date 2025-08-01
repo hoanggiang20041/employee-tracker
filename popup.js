@@ -20,6 +20,9 @@ async function loadSavedEmployeeInfo() {
         document.getElementById('employeeId').value = data.employeeId;
         document.getElementById('employeeName').value = data.employeeName;
         console.log('📥 Loaded employee info from server:', data);
+        
+        // Lưu lại để đảm bảo persistence
+        await saveEmployeeInfo(data.employeeId, data.employeeName);
       }
     }
   } catch (error) {
@@ -30,7 +33,7 @@ async function loadSavedEmployeeInfo() {
 // Lưu thông tin nhân viên
 async function saveEmployeeInfo(employeeId, employeeName) {
   try {
-    // Chỉ lưu vào server
+    // Lưu vào server
     const response = await fetch('https://employee-tracker-2np8.onrender.com/employee-session', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -39,6 +42,22 @@ async function saveEmployeeInfo(employeeId, employeeName) {
     
     if (response.ok) {
       console.log('💾 Saved employee info to server');
+      
+      // Cũng lưu tracking status để đảm bảo persistence
+      const trackingResponse = await fetch('https://employee-tracker-2np8.onrender.com/tracking-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          employeeId,
+          employeeName,
+          isTracking: false,
+          startTime: null
+        })
+      });
+      
+      if (trackingResponse.ok) {
+        console.log('💾 Saved tracking status to server');
+      }
     } else {
       console.error('❌ Lỗi khi lưu employee info lên server');
     }

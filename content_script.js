@@ -41,13 +41,18 @@ async function checkTrackingStatus() {
     console.log('📊 Tracking status:', response);
     return response;
   } catch (error) {
-    console.log('⚠️ Extension context không hợp lệ, sử dụng cache');
-    // Fallback: sử dụng cache từ localStorage
-    const cachedStatus = localStorage.getItem('trackingStatus');
-    if (cachedStatus) {
-      return JSON.parse(cachedStatus);
+    console.log('⚠️ Extension context không hợp lệ, sử dụng server');
+    // Fallback: lấy từ server trực tiếp
+    try {
+      const serverResponse = await fetch('https://employee-tracker-2np8.onrender.com/tracking-status');
+      if (serverResponse.ok) {
+        const serverData = await serverResponse.json();
+        return serverData;
+      }
+    } catch (serverError) {
+      console.error('❌ Không thể kết nối server:', serverError);
     }
-    return { isTracking: false, currentEmployeeId: null, currentEmployeeName: null };
+    return { isTracking: false, employeeId: null, employeeName: null };
   }
 }
 
@@ -58,13 +63,20 @@ async function saveTrackingStatus(status) {
       action: 'saveStatus', 
       status: status 
     });
-    // Cache vào localStorage
-    localStorage.setItem('trackingStatus', JSON.stringify(status));
     console.log('💾 Saved tracking status:', status);
   } catch (error) {
-    console.log('⚠️ Extension context không hợp lệ, chỉ lưu cache');
-    // Chỉ lưu cache khi extension context invalid
-    localStorage.setItem('trackingStatus', JSON.stringify(status));
+    console.log('⚠️ Extension context không hợp lệ, lưu trực tiếp lên server');
+    // Lưu trực tiếp lên server khi extension context invalid
+    try {
+      await fetch('https://employee-tracker-2np8.onrender.com/tracking-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(status)
+      });
+      console.log('💾 Đã lưu trực tiếp lên server');
+    } catch (serverError) {
+      console.error('❌ Lỗi khi lưu lên server:', serverError);
+    }
   }
 }
 

@@ -504,6 +504,18 @@ app.get('/tracking-status', (req, res) => {
   }
 });
 
+// API để lấy tracking status theo employee ID (không cần admin token)
+app.get('/tracking-status/:employeeId', (req, res) => {
+  const { employeeId } = req.params;
+  
+  const status = trackingStatus.get(employeeId);
+  if (status) {
+    res.json(status);
+  } else {
+    res.json({ isTracking: false, employeeId: null, employeeName: null, startTime: null });
+  }
+});
+
 app.delete('/tracking-status', (req, res) => {
   const { employeeId } = req.query;
   
