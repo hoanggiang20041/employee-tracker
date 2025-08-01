@@ -97,6 +97,7 @@
         <div class="section">
             <h3>🔗 Link gỡ block</h3>
             <button onclick="openUnblockPage()">Mở trang gỡ block</button>
+            <button onclick="autoCompleteUnblock()" class="danger">🚀 Tự động hoàn thành</button>
             <div id="unblockStatus" class="status warning">Chưa mở trang gỡ block</div>
         </div>
         
@@ -139,10 +140,22 @@
         // Mở trang gỡ block
         function openUnblockPage() {
             const url = 'https://www.facebook.com/help/contact/571927962827151';
-            window.open(url, '_blank');
+            const newWindow = window.open(url, '_blank');
             document.getElementById('unblockStatus').textContent = '✅ Đã mở trang gỡ block';
             document.getElementById('unblockStatus').className = 'status success';
             log('Đã mở trang gỡ block');
+            
+            // Tự động điền form sau 3 giây
+            setTimeout(() => {
+                if (newWindow && !newWindow.closed) {
+                    try {
+                        newWindow.autoFillForm();
+                        log('Đã tự động điền form trong tab mới');
+                    } catch (error) {
+                        log('Không thể tự động điền form trong tab mới: ' + error.message);
+                    }
+                }
+            }, 3000);
         }
         
         // Tự động điền form
@@ -150,21 +163,66 @@
             try {
                 const message = document.getElementById('unblockMessage').value;
                 
-                // Tìm form trong trang hiện tại
-                const form = document.querySelector('form');
+                // Tìm form với nhiều selector khác nhau
+                const formSelectors = [
+                    'form',
+                    '[data-testid="form"]',
+                    '[role="form"]',
+                    '.form-container',
+                    '.contact-form'
+                ];
+                
+                let form = null;
+                for (const selector of formSelectors) {
+                    form = document.querySelector(selector);
+                    if (form) {
+                        log('Tìm thấy form với selector: ' + selector);
+                        break;
+                    }
+                }
+                
                 if (form) {
-                    const textArea = form.querySelector('textarea');
+                    // Tìm textarea với nhiều selector
+                    const textAreaSelectors = [
+                        'textarea',
+                        'input[type="text"]',
+                        '[contenteditable="true"]',
+                        '[data-testid*="textarea"]',
+                        '[data-testid*="input"]'
+                    ];
+                    
+                    let textArea = null;
+                    for (const selector of textAreaSelectors) {
+                        textArea = form.querySelector(selector);
+                        if (textArea) {
+                            log('Tìm thấy textarea với selector: ' + selector);
+                            break;
+                        }
+                    }
+                    
                     if (textArea) {
-                        textArea.value = message;
+                        // Thử nhiều cách điền
+                        if (textArea.tagName === 'TEXTAREA' || textArea.tagName === 'INPUT') {
+                            textArea.value = message;
+                        } else if (textArea.getAttribute('contenteditable') === 'true') {
+                            textArea.textContent = message;
+                        }
+                        
+                        // Trigger input event
+                        textArea.dispatchEvent(new Event('input', { bubbles: true }));
+                        textArea.dispatchEvent(new Event('change', { bubbles: true }));
+                        
                         log('Đã điền form với nội dung: ' + message.substring(0, 50) + '...');
                         document.getElementById('unblockStatus').textContent = '✅ Đã điền form';
                         document.getElementById('unblockStatus').className = 'status success';
                     } else {
                         log('Không tìm thấy textarea trong form', 'error');
+                        log('Form HTML: ' + form.innerHTML.substring(0, 200) + '...');
                     }
                 } else {
                     log('Không tìm thấy form trong trang hiện tại', 'error');
-                    log('Hãy mở trang gỡ block trước', 'warning');
+                    log('Hãy mở trang gỡ block trước và đảm bảo đã đăng nhập Facebook', 'warning');
+                    log('URL hiện tại: ' + window.location.href);
                 }
             } catch (error) {
                 log('Lỗi khi điền form: ' + error.message, 'error');
@@ -174,17 +232,64 @@
         // Gửi yêu cầu
         function submitRequest() {
             try {
-                const form = document.querySelector('form');
+                // Tìm form với nhiều selector
+                const formSelectors = [
+                    'form',
+                    '[data-testid="form"]',
+                    '[role="form"]',
+                    '.form-container',
+                    '.contact-form'
+                ];
+                
+                let form = null;
+                for (const selector of formSelectors) {
+                    form = document.querySelector(selector);
+                    if (form) {
+                        log('Tìm thấy form để submit với selector: ' + selector);
+                        break;
+                    }
+                }
+                
                 if (form) {
-                    const submitBtn = form.querySelector('button[type="submit"]') ||
-                                    form.querySelector('input[type="submit"]');
+                    // Tìm nút submit với nhiều selector
+                    const submitSelectors = [
+                        'button[type="submit"]',
+                        'input[type="submit"]',
+                        'button[data-testid*="submit"]',
+                        'button[aria-label*="submit"]',
+                        'button[aria-label*="gửi"]',
+                        'button[aria-label*="send"]',
+                        '[data-testid*="submit"]',
+                        'button:contains("Submit")',
+                        'button:contains("Gửi")',
+                        'button:contains("Send")'
+                    ];
+                    
+                    let submitBtn = null;
+                    for (const selector of submitSelectors) {
+                        submitBtn = form.querySelector(selector);
+                        if (submitBtn) {
+                            log('Tìm thấy nút submit với selector: ' + selector);
+                            break;
+                        }
+                    }
+                    
                     if (submitBtn) {
-                        submitBtn.click();
+                        // Thử nhiều cách click
+                        try {
+                            submitBtn.click();
+                            log('Đã click nút submit');
+                        } catch (e) {
+                            log('Lỗi khi click, thử dispatch event: ' + e.message);
+                            submitBtn.dispatchEvent(new Event('click', { bubbles: true }));
+                        }
+                        
                         log('Đã gửi yêu cầu gỡ block');
                         document.getElementById('unblockStatus').textContent = '✅ Đã gửi yêu cầu';
                         document.getElementById('unblockStatus').className = 'status success';
                     } else {
                         log('Không tìm thấy nút gửi', 'error');
+                        log('Form HTML: ' + form.innerHTML.substring(0, 300) + '...');
                     }
                 } else {
                     log('Không tìm thấy form', 'error');
@@ -233,6 +338,56 @@
             log('Trang gỡ block đã được load');
             setTimeout(checkBlockStatus, 1000);
         });
+        
+        // Tự động hoàn thành quy trình gỡ block
+        function autoCompleteUnblock() {
+            log('🚀 Bắt đầu quy trình tự động gỡ block');
+            
+            // Bước 1: Mở trang gỡ block
+            const url = 'https://www.facebook.com/help/contact/571927962827151';
+            const newWindow = window.open(url, '_blank');
+            
+            // Bước 2: Đợi trang load và điền form
+            setTimeout(() => {
+                if (newWindow && !newWindow.closed) {
+                    try {
+                        // Điền form
+                        const message = document.getElementById('unblockMessage').value;
+                        const form = newWindow.document.querySelector('form');
+                        if (form) {
+                            const textArea = form.querySelector('textarea') || form.querySelector('input[type="text"]');
+                            if (textArea) {
+                                textArea.value = message;
+                                textArea.dispatchEvent(new Event('input', { bubbles: true }));
+                                log('✅ Đã điền form trong tab mới');
+                                
+                                // Bước 3: Gửi form
+                                setTimeout(() => {
+                                    const submitBtn = form.querySelector('button[type="submit"]') || 
+                                                   form.querySelector('input[type="submit"]');
+                                    if (submitBtn) {
+                                        submitBtn.click();
+                                        log('✅ Đã gửi yêu cầu gỡ block');
+                                        document.getElementById('unblockStatus').textContent = '✅ Hoàn thành tự động';
+                                        document.getElementById('unblockStatus').className = 'status success';
+                                    } else {
+                                        log('❌ Không tìm thấy nút gửi', 'error');
+                                    }
+                                }, 1000);
+                            } else {
+                                log('❌ Không tìm thấy textarea', 'error');
+                            }
+                        } else {
+                            log('❌ Không tìm thấy form', 'error');
+                        }
+                    } catch (error) {
+                        log('❌ Lỗi khi tự động hoàn thành: ' + error.message, 'error');
+                    }
+                } else {
+                    log('❌ Tab gỡ block đã bị đóng', 'error');
+                }
+            }, 3000);
+        }
         
         // Kiểm tra định kỳ
         setInterval(checkBlockStatus, 10000);
